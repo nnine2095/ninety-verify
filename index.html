@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ninety verification netflix-code</title>
+
+    <!-- 📍 ข้อความที่จะขึ้นแสดงเวลาส่งลิงก์ใน LINE / Facebook / แอปแชท -->
+    <meta property="og:title" content="Netflix Verification Code Reader">
+    <meta property="og:description" content="ninety verification ">
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            background-color: #141414; 
+            color: white;
+            padding: 20px; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 90vh;
+            margin: 0;
+        }
+        .container { 
+            max-width: 400px; 
+            width: 100%;
+            background: #181818; 
+            padding: 30px; 
+            border-radius: 12px; 
+            box-shadow: 0 8px 16px rgba(0,0,0,0.5); 
+            text-align: center;
+        }
+        .header { 
+            color: #E50914; 
+            margin-bottom: 25px;
+            font-size: 24px;
+        }
+        .email-card { 
+            border: 1px solid #333; 
+            border-radius: 8px;
+            padding: 20px; 
+            margin-bottom: 15px;
+            background-color: #222;
+        }
+        .netflix-code { 
+            font-size: 52px; 
+            font-weight: bold; 
+            color: #E50914; 
+            letter-spacing: 8px; 
+            margin: 15px 0; 
+        }
+        .copy-btn {
+            background-color: #E50914;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 5px;
+        }
+        .copy-btn:hover {
+            background-color: #f40612;
+        }
+        .copy-btn.copied {
+            background-color: #2e7d32; /* เปลี่ยนเป็นสีเขียวเมื่อคัดลอกสำเร็จ */
+        }
+        .email-date { 
+            font-size: 13px; 
+            color: #aaa; 
+            margin-top: 15px;
+        }
+        .no-code { 
+            font-size: 16px; 
+            color: #888; 
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 class="header">รหัสยืนยัน Netflix</h2>
+        <div id="email-list">กำลังรอรหัส...</div>
+    </div>
+
+    <script>
+        function extractNetflixCode(text) {
+            if (!text) return null;
+
+            const keywordMatch = text.match(/(?:รหัส|code|verification|sign in|ยืนยัน)[\s\S]{0,30}?\b(\d{4,6})\b/i);
+            if (keywordMatch) {
+                return keywordMatch[1];
+            }
+
+            const standaloneMatch = text.match(/\b(\d{4}|\d{6})\b/);
+            if (standaloneMatch) {
+                return standaloneMatch[1];
+            }
+
+            return null;
+        }
+
+        // 📍 ฟังก์ชันสำหรับคัดลอกรหัสเข้า Clipboard
+        function copyCodeToClipboard(codeText) {
+            navigator.clipboard.writeText(codeText).then(() => {
+                const btn = document.getElementById('btn-copy');
+                if (btn) {
+                    btn.innerText = 'คัดลอกแล้ว! ✓';
+                    btn.classList.add('copied');
+                    setTimeout(() => {
+                        btn.innerText = 'คัดลอกรหัส';
+                        btn.classList.remove('copied');
+                    }, 2000);
+                }
+            }).catch(err => {
+                console.error('คัดลอกไม่สำเร็จ:', err);
+            });
+        }
+
+        async function loadEmails() {
+            try {
+                const response = await fetch('http://localhost:3000/api/emails');
+                const emails = await response.json();
+                
+                const listDiv = document.getElementById('email-list');
+                listDiv.innerHTML = '';
+
+                if (emails.length === 0) {
+                    listDiv.innerHTML = '<p class="no-code">ไม่พบอีเมลจาก Netflix</p>';
+                    return;
+                }
+
+                const latestEmail = emails[0];
+                const textToScan = latestEmail.subject + " " + latestEmail.body;
+                const foundCode = extractNetflixCode(textToScan);
+
+                const emailDiv = document.createElement('div');
+                emailDiv.className = 'email-card';
+
+                if (foundCode) {
+                    emailDiv.innerHTML = `
+                        <div style="font-size: 14px; color: #ccc;">รหัสยืนยันล่าสุด</div>
+                        <div class="netflix-code">${foundCode}</div>
+                        <button id="btn-copy" class="copy-btn" onclick="copyCodeToClipboard('${foundCode}')">คัดลอกรหัส</button>
+                        <div class="email-date">รับเมื่อ: ${new Date(latestEmail.date).toLocaleString('th-TH')}</div>
+                    `;
+                } else {
+                    emailDiv.innerHTML = `
+                        <div class="no-code">พบอีเมลแต่ไม่เจอรหัสยืนยัน</div>
+                        <div class="email-date">รับเมื่อ: ${new Date(latestEmail.date).toLocaleString('th-TH')}</div>
+                    `;
+                }
+
+                listDiv.appendChild(emailDiv);
+
+            } catch (error) {
+                document.getElementById('email-list').innerHTML = '<p style="color:#E50914;">เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ กรุณาเปิด node server.js</p>';
+            }
+        }
+
+        loadEmails();
+        setInterval(loadEmails, 10000);
+    </script>
+</body>
+</html>
