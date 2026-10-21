@@ -119,7 +119,7 @@
 
         async function loadEmails() {
             try {
-                const response = await fetch('http://localhost:3000/api/emails');
+                const response = await fetch('/api/emails');
                 const emails = await response.json();
                 
                 const listDiv = document.getElementById('email-list');

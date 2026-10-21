@@ -62,6 +62,13 @@ app.get('/api/emails', async (req, res) => {
 });
 
 const PORT = 3000;
+const path = require('path');
+
+// 📍 เพิ่มส่วนนี้เพื่อให้เซิร์ฟเวอร์ส่งไฟล์ index.html เมื่อเปิดหน้าแรก
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 app.listen(PORT, () => {
     console.log(`Backend Server รันอยู่บน http://localhost:${PORT}`);
 });
