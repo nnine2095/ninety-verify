@@ -122,7 +122,7 @@ app.get('/api/emails', async (req, res) => {
     }
 });
 
-// 6. หน้า Admin Dashboard
+// 6. หน้า Admin Dashboard (พร้อมช่องกรอก Screen, PIN, Mail)
 app.get('/', (req, res) => {
     res.send(`
         <!DOCTYPE html>
