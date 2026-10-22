@@ -7,7 +7,9 @@ const { simpleParser } = require('mailparser');
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-app.use(express.json());
+// เพิ่ม limit เป็น 10mb เพื่อรองรับไฟล์รูปภาพ Base64 จากการอัปโหลด
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 const validTokens = new Map();
 
@@ -122,7 +124,7 @@ app.get('/api/emails', async (req, res) => {
     }
 });
 
-// 6. หน้า Admin Dashboard
+// 6. หน้า Admin Dashboard (อัปเดตระบบเลือกไฟล์รูปภาพจากในเครื่อง)
 app.get('/', (req, res) => {
     res.send(`
         <!DOCTYPE html>
@@ -140,7 +142,7 @@ app.get('/', (req, res) => {
                 .section-title { font-size: 14px; color: #E50914; font-weight: 600; margin: 15px 0 10px 0; border-bottom: 1px solid #333; padding-bottom: 5px; }
                 .form-group { margin-bottom: 12px; text-align: left; }
                 label { display: block; font-size: 13px; color: #ccc; margin-bottom: 5px; }
-                input[type="text"], input[type="url"], select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #444; background: #111; color: #fff; font-size: 13px; font-family: 'Prompt'; }
+                input[type="text"], input[type="url"], input[type="file"], select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #444; background: #111; color: #fff; font-size: 13px; font-family: 'Prompt'; }
                 .row-group { display: flex; gap: 10px; }
                 .row-group div { flex: 1; }
                 input[type="color"] { width: 100%; height: 38px; border-radius: 8px; border: 1px solid #444; background: #111; cursor: pointer; }
@@ -149,6 +151,7 @@ app.get('/', (req, res) => {
                 .btn-copy { background: #333; margin-top: 10px; display: none; }
                 .btn-copy.success { background: #2e7d32; }
                 #link-output { text-align: center; font-size: 13px; margin-top: 12px; display: none; }
+                .file-hint { font-size: 11px; color: #888; margin-top: 3px; }
             </style>
         </head>
         <body>
@@ -171,25 +174,27 @@ app.get('/', (req, res) => {
                     <input type="text" id="mail" placeholder="user@gmail.com">
                 </div>
 
-                <div class="section-title">2. ตกแต่งพื้นหลัง & รูปภาพ</div>
+                <div class="section-title">2. ตกแต่งพื้นหลัง & รูปภาพ (เลือกจากในเครื่อง)</div>
                 <div class="form-group">
                     <label>รูปแบบพื้นหลัง</label>
-                    <select id="bgType">
+                    <select id="bgType" onchange="toggleBgInputs()">
                         <option value="color">สีพื้นหลัง (Solid Color)</option>
-                        <option value="image">รูปภาพพื้นหลัง (URL Image)</option>
+                        <option value="image">รูปภาพพื้นหลัง (อัปโหลดจากเครื่อง)</option>
                     </select>
                 </div>
-                <div class="form-group">
+                <div class="form-group" id="group-bgColor">
                     <label>สีพื้นหลัง</label>
                     <input type="color" id="bgColor" value="#0f0f0f">
                 </div>
-                <div class="form-group">
-                    <label>URL รูปภาพพื้นหลัง</label>
-                    <input type="url" id="bgImage" placeholder="https://example.com/bg.jpg">
+                <div class="form-group" id="group-bgImage" style="display: none;">
+                    <label>เลือกรูปภาพพื้นหลัง</label>
+                    <input type="file" id="bgImageFile" accept="image/*">
+                    <div class="file-hint">เลือกไฟล์รูปภาพจากในคอมหรือมือถือของคุณ</div>
                 </div>
                 <div class="form-group">
-                    <label>URL โลโก้ / รูปหัวข้อ</label>
-                    <input type="url" id="logoUrl" placeholder="https://example.com/logo.png">
+                    <label>เลือกรูปโลโก้ / รูปหัวข้อ (ถ้ามี)</label>
+                    <input type="file" id="logoFile" accept="image/*">
+                    <div class="file-hint">เลือกไฟล์โลโก้จากในเครื่องของคุณ</div>
                 </div>
 
                 <div class="section-title">3. ธีมสี & เพลงประกอบ</div>
@@ -215,15 +220,43 @@ app.get('/', (req, res) => {
             </div>
 
             <script>
+                function toggleBgInputs() {
+                    const type = document.getElementById('bgType').value;
+                    if (type === 'image') {
+                        document.getElementById('group-bgColor').style.display = 'none';
+                        document.getElementById('group-bgImage').style.display = 'block';
+                    } else {
+                        document.getElementById('group-bgColor').style.display = 'block';
+                        document.getElementById('group-bgImage').style.display = 'none';
+                    }
+                }
+
+                // ฟังก์ชันอ่านไฟล์รูปภาพจากเครื่องแปลงเป็น Base64
+                function fileToBase64(file) {
+                    return new Promise((resolve, reject) => {
+                        if (!file) resolve('');
+                        const reader = new FileReader();
+                        reader.readAsDataURL(file);
+                        reader.onload = () => resolve(reader.result);
+                        reader.onerror = error => reject(error);
+                    });
+                }
+
                 async function generateCustomLink() {
+                    const bgFile = document.getElementById('bgImageFile').files[0];
+                    const logoFile = document.getElementById('logoFile').files[0];
+
+                    const bgImageData = await fileToBase64(bgFile);
+                    const logoData = await fileToBase64(logoFile);
+
                     const themeConfig = {
                         screenTv: document.getElementById('screenTv').value,
                         pin: document.getElementById('pin').value,
                         mail: document.getElementById('mail').value,
                         bgType: document.getElementById('bgType').value,
                         bgColor: document.getElementById('bgColor').value,
-                        bgImage: document.getElementById('bgImage').value,
-                        logoUrl: document.getElementById('logoUrl').value,
+                        bgImage: bgImageData,
+                        logoUrl: logoData,
                         mainColor: document.getElementById('mainColor').value,
                         textColor: document.getElementById('textColor').value,
                         musicUrl: document.getElementById('musicUrl').value
