@@ -9,18 +9,20 @@ const PORT = process.env.PORT || 10000;
 
 app.use(express.json());
 
-// หน่วยความจำเก็บ Token และค่าธีมการตกแต่ง
 const validTokens = new Map();
 
-// 1. API สร้าง Link พร้อมบันทึกค่าตกแต่ง
+// 1. API สร้าง Link พร้อมบันทึกข้อมูลธีมและโปรไฟล์ลูกค้า
 app.post('/api/generate-link', (req, res) => {
     const tokenId = crypto.randomBytes(8).toString('hex');
     const themeConfig = {
+        screenTv: req.body.screenTv || '-',
+        pin: req.body.pin || '-',
+        mail: req.body.mail || '-',
         bgType: req.body.bgType || 'color',
         bgColor: req.body.bgColor || '#0f0f0f',
         bgImage: req.body.bgImage || '',
         logoUrl: req.body.logoUrl || '',
-        mainColor: req.body.mainColor || '#E50914',
+        mainColor: req.body.mainColor || '#ff0d19',
         textColor: req.body.textColor || '#ffffff',
         musicUrl: req.body.musicUrl || ''
     };
@@ -30,7 +32,7 @@ app.post('/api/generate-link', (req, res) => {
     res.json({ url: oneTimeUrl, token: tokenId });
 });
 
-// 2. API ดึงค่าธีมของ Token นั้นๆ
+// 2. API ดึงค่าธีมและโปรไฟล์
 app.get('/api/theme/:token', (req, res) => {
     const { token } = req.params;
     if (!validTokens.has(token)) {
@@ -39,7 +41,7 @@ app.get('/api/theme/:token', (req, res) => {
     res.json(validTokens.get(token));
 });
 
-// 3. หน้าเปิดดูรหัส (ตรวจสอบ Token)
+// 3. หน้าเปิดดูรหัส
 app.get('/view/:token', (req, res) => {
     const { token } = req.params;
     if (!validTokens.has(token)) {
@@ -120,7 +122,7 @@ app.get('/api/emails', async (req, res) => {
     }
 });
 
-// 6. หน้าแอดมินสร้างลิงก์ + ฟอร์มตั้งค่าธีมและเพลง
+// 6. หน้า Admin Dashboard
 app.get('/', (req, res) => {
     res.send(`
         <!DOCTYPE html>
@@ -139,8 +141,8 @@ app.get('/', (req, res) => {
                 .form-group { margin-bottom: 12px; text-align: left; }
                 label { display: block; font-size: 13px; color: #ccc; margin-bottom: 5px; }
                 input[type="text"], input[type="url"], select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #444; background: #111; color: #fff; font-size: 13px; font-family: 'Prompt'; }
-                .color-picker-group { display: flex; gap: 10px; }
-                .color-picker-group div { flex: 1; }
+                .row-group { display: flex; gap: 10px; }
+                .row-group div { flex: 1; }
                 input[type="color"] { width: 100%; height: 38px; border-radius: 8px; border: 1px solid #444; background: #111; cursor: pointer; }
                 .btn { background: #E50914; color: #fff; border: none; padding: 12px; font-size: 15px; border-radius: 8px; cursor: pointer; font-family: 'Prompt'; font-weight: 600; width: 100%; margin-top: 15px; transition: all 0.2s; }
                 .btn:hover { background: #f40612; }
@@ -151,9 +153,25 @@ app.get('/', (req, res) => {
         </head>
         <body>
             <div class="card">
-                <h2>🎨 ปรับแต่งหน้าตา & สร้าง Link</h2>
+                <h2>🎨 ปรับแต่งข้อมูล & สร้าง Link</h2>
                 
-                <div class="section-title">1. ตกแต่งพื้นหลัง & รูปภาพ</div>
+                <div class="section-title">1. ข้อมูลลูกค้าสำหรับหน้าแรก</div>
+                <div class="row-group">
+                    <div class="form-group">
+                        <label>Screen / TV</label>
+                        <input type="text" id="screenTv" placeholder="เช่น จอ 1 / TV 01">
+                    </div>
+                    <div class="form-group">
+                        <label>PIN</label>
+                        <input type="text" id="pin" placeholder="เช่น 1234">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Mail (อีเมลผู้ใช้)</label>
+                    <input type="text" id="mail" placeholder="user@gmail.com">
+                </div>
+
+                <div class="section-title">2. ตกแต่งพื้นหลัง & รูปภาพ</div>
                 <div class="form-group">
                     <label>รูปแบบพื้นหลัง</label>
                     <select id="bgType">
@@ -162,23 +180,23 @@ app.get('/', (req, res) => {
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>สีพื้นหลัง (ถ้าเลือกใช้สี)</label>
+                    <label>สีพื้นหลัง</label>
                     <input type="color" id="bgColor" value="#0f0f0f">
                 </div>
                 <div class="form-group">
-                    <label>URL รูปภาพพื้นหลัง (ถ้าเลือกใช้รูป)</label>
+                    <label>URL รูปภาพพื้นหลัง</label>
                     <input type="url" id="bgImage" placeholder="https://example.com/bg.jpg">
                 </div>
                 <div class="form-group">
-                    <label>URL โลโก้ / รูปหัวข้อ (ถ้ามี)</label>
+                    <label>URL โลโก้ / รูปหัวข้อ</label>
                     <input type="url" id="logoUrl" placeholder="https://example.com/logo.png">
                 </div>
 
-                <div class="section-title">2. ธีมสี & เพลงประกอบ</div>
-                <div class="color-picker-group">
+                <div class="section-title">3. ธีมสี & เพลงประกอบ</div>
+                <div class="row-group">
                     <div class="form-group">
-                        <label>สีไฮไลท์ / ปุ่ม</label>
-                        <input type="color" id="mainColor" value="#E50914">
+                        <label>สีปุ่ม / ไฮไลท์</label>
+                        <input type="color" id="mainColor" value="#ff0d19">
                     </div>
                     <div class="form-group">
                         <label>สีข้อความ</label>
@@ -186,7 +204,7 @@ app.get('/', (req, res) => {
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>URL เพลงประกอบ (ไฟล์ .mp3 Direct Link)</label>
+                    <label>URL เพลงประกอบ (.mp3)</label>
                     <input type="url" id="musicUrl" placeholder="https://example.com/song.mp3">
                 </div>
 
@@ -199,6 +217,9 @@ app.get('/', (req, res) => {
             <script>
                 async function generateCustomLink() {
                     const themeConfig = {
+                        screenTv: document.getElementById('screenTv').value,
+                        pin: document.getElementById('pin').value,
+                        mail: document.getElementById('mail').value,
                         bgType: document.getElementById('bgType').value,
                         bgColor: document.getElementById('bgColor').value,
                         bgImage: document.getElementById('bgImage').value,

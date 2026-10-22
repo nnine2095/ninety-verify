@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verification Code</title>
+    <title>Verification Center</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -16,53 +16,135 @@
             color: #ffffff; 
             padding: 20px; 
             display: flex; 
+            flex-direction: column;
             justify-content: center; 
             align-items: center; 
             min-height: 100vh; 
         }
-        .container { 
-            max-width: 420px; 
+
+        /* ----- โครงสร้างหน้า Step 1 (ข้อมูลโปรไฟล์) ----- */
+        .step1-container {
+            max-width: 440px;
+            width: 100%;
+            background: rgba(20, 20, 20, 0.9);
+            backdrop-filter: blur(12px);
+            border-radius: 24px;
+            padding: 30px 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+            position: relative;
+        }
+
+        .row-2col {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .info-box {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid #ffffff;
+            border-radius: 18px;
+            padding: 15px 10px;
+            text-align: center;
+        }
+
+        .info-box-full {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid #ffffff;
+            border-radius: 18px;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .info-title {
+            font-size: 14px;
+            color: #aaaaaa;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .info-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #ffffff;
+            word-break: break-all;
+        }
+
+        .btn-action {
+            background-color: #ff0d19;
+            color: #ffffff;
+            border: 2px solid #000000;
+            padding: 16px;
+            font-size: 20px;
+            font-weight: 700;
+            font-family: 'Prompt', sans-serif;
+            border-radius: 25px;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s ease;
+            box-shadow: 0 5px 15px rgba(255, 13, 25, 0.4);
+        }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+
+        /* ----- โครงสร้างหน้า Step 2 (การ์ดรหัสยืนยัน) ----- */
+        .step2-wrapper {
+            display: none; /* ซ่อนไว้ก่อน */
+            width: 100%;
+            max-width: 440px;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .outer-card { 
             width: 100%; 
-            background: rgba(20, 20, 20, 0.88); 
-            backdrop-filter: blur(12px); 
+            background: #2b2b2b; 
+            border-radius: 24px; 
             padding: 35px 25px; 
-            border-radius: 20px; 
-            border: 1px solid rgba(255, 255, 255, 0.1); 
-            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7); 
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4); 
             text-align: center; 
             position: relative;
         }
-        .logo-img { max-width: 180px; height: auto; margin-bottom: 15px; }
-        .logo-text { font-size: 26px; font-weight: 700; color: #E50914; letter-spacing: 1px; margin-bottom: 20px; text-transform: uppercase; }
-        .email-card { background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 25px 20px; margin-top: 10px; }
-        .card-label { font-size: 14px; opacity: 0.8; margin-bottom: 8px; }
-        .netflix-code { font-size: 48px; font-weight: 700; letter-spacing: 8px; margin: 15px 0 20px 0; text-shadow: 0 0 15px rgba(255,255,255,0.2); }
-        .copy-btn { 
-            background-color: #E50914; 
-            color: #ffffff; 
-            border: none; 
-            padding: 12px 28px; 
-            font-size: 16px; 
-            font-weight: 600; 
-            font-family: 'Prompt', sans-serif; 
-            border-radius: 30px; 
-            cursor: pointer; 
-            transition: all 0.3s ease; 
-            width: 100%; 
+
+        .logo-img { max-width: 200px; height: auto; margin-bottom: 20px; }
+        .logo-text { font-size: 24px; font-weight: 700; color: #ff0d19; letter-spacing: 2px; margin-bottom: 25px; text-transform: uppercase; }
+        .inner-card { background: #1c1c1c; border-radius: 16px; padding: 30px 20px; }
+        .card-label { font-size: 13px; color: #aaaaaa; margin-bottom: 12px; }
+        .netflix-code { font-size: 58px; font-weight: 700; color: #ff0d19; letter-spacing: 6px; margin: 10px 0 25px 0; text-shadow: 0 0 20px rgba(255, 13, 25, 0.4); }
+        .copy-btn { background-color: #ff0d19; color: #ffffff; border: none; padding: 14px 20px; font-size: 16px; font-weight: 700; font-family: 'Prompt', sans-serif; border-radius: 30px; cursor: pointer; transition: all 0.2s ease; width: 100%; }
+        .copy-btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
+        .email-date { font-size: 12px; color: #888888; margin-top: 20px; }
+        .no-code { font-size: 15px; color: #aaaaaa; padding: 20px 0; }
+
+        .alert-box {
+            margin-top: 25px;
+            width: 100%;
+            background: #ffffff;
+            border: 3px solid #000000;
+            border-radius: 20px;
+            padding: 12px 20px;
+            text-align: center;
+            color: #000000;
+            font-size: 18px;
+            font-weight: 600;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
-        .copy-btn:hover { opacity: 0.9; transform: translateY(-2px); }
-        .email-date { font-size: 12px; opacity: 0.6; margin-top: 18px; }
-        .no-code { font-size: 15px; opacity: 0.7; padding: 20px 0; }
-        
-        /* ปุ่มเปิด/ปิดเพลง */
+
         .music-control {
             position: absolute;
             top: 15px;
             right: 15px;
-            background: rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.15);
             border: none;
             color: #fff;
-            padding: 6px 12px;
+            padding: 5px 12px;
             border-radius: 20px;
             font-size: 12px;
             cursor: pointer;
@@ -72,14 +154,45 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <button id="btn-music" class="music-control" onclick="toggleMusic()">🔊 ปิดเพลง</button>
+
+    <!-- 📍 STEP 1: หน้าแสดงข้อมูลตามรูปวาด -->
+    <div id="step1" class="step1-container">
+        <button id="btn-music-step1" class="music-control" onclick="toggleMusic()">🔊 ปิดเพลง</button>
         
-        <div id="logo-container">
-            <div class="logo-text" id="logo-text">VERIFICATION CODE</div>
+        <div class="row-2col">
+            <div class="info-box">
+                <div class="info-title">Screen / TV</div>
+                <div class="info-value" id="val-screen">-</div>
+            </div>
+            <div class="info-box">
+                <div class="info-title">PIN</div>
+                <div class="info-value" id="val-pin">-</div>
+            </div>
         </div>
 
-        <div id="email-list">กำลังรอดึงรหัส...</div>
+        <div class="info-box-full">
+            <div class="info-title">Mail</div>
+            <div class="info-value" id="val-mail">-</div>
+        </div>
+
+        <button class="btn-action" id="btn-goto-step2" onclick="goToStep2()">รับรหัสยืนยัน</button>
+    </div>
+
+    <!-- 📍 STEP 2: หน้าการ์ดรหัสยืนยัน -->
+    <div id="step2" class="step2-wrapper">
+        <div class="outer-card">
+            <button id="btn-music-step2" class="music-control" onclick="toggleMusic()">🔊 ปิดเพลง</button>
+            
+            <div id="logo-container">
+                <div class="logo-text" id="logo-text">VERIFICATION CODE</div>
+            </div>
+
+            <div id="email-list">กำลังรอดึงรหัส...</div>
+        </div>
+
+        <div class="alert-box">
+            หากคัดลอกแล้วลิงก์จะหมดอายุทันที
+        </div>
     </div>
 
     <audio id="bg-audio" loop></audio>
@@ -88,12 +201,17 @@
         const currentToken = window.location.pathname.split('/').pop();
         let bgAudio = document.getElementById('bg-audio');
 
-        // 1. โหลดการตั้งค่าธีมและเพลง
+        // โหลดข้อมูลธีมและโปรไฟล์
         async function loadTheme() {
             try {
                 const res = await fetch(`/api/theme/${currentToken}`);
                 if (!res.ok) return;
                 const config = await res.json();
+
+                // แสดงข้อมูล Step 1
+                document.getElementById('val-screen').innerText = config.screenTv || '-';
+                document.getElementById('val-pin').innerText = config.pin || '-';
+                document.getElementById('val-mail').innerText = config.mail || '-';
 
                 // ตั้งค่าพื้นหลัง
                 if (config.bgType === 'image' && config.bgImage) {
@@ -102,23 +220,24 @@
                     document.body.style.backgroundColor = config.bgColor;
                 }
 
-                // ตั้งค่าโลโก้
+                // ตั้งค่าโลโก้ Step 2
                 if (config.logoUrl) {
                     document.getElementById('logo-container').innerHTML = `<img src="${config.logoUrl}" class="logo-img">`;
-                } else {
-                    document.getElementById('logo-text').style.color = config.mainColor || '#E50914';
+                } else if (config.mainColor) {
+                    document.getElementById('logo-text').style.color = config.mainColor;
                 }
 
-                // ตั้งค่าสีข้อความและปุ่ม
-                document.body.style.color = config.textColor || '#ffffff';
-                
+                // ตั้งค่าสีปุ่ม
+                if (config.mainColor) {
+                    document.getElementById('btn-goto-step2').style.backgroundColor = config.mainColor;
+                }
+
                 // ตั้งค่าเพลงประกอบ
                 if (config.musicUrl) {
                     bgAudio.src = config.musicUrl;
-                    const musicBtn = document.getElementById('btn-music');
-                    musicBtn.style.display = 'block';
+                    document.getElementById('btn-music-step1').style.display = 'block';
+                    document.getElementById('btn-music-step2').style.display = 'block';
                     
-                    // เล่นเพลงอัตโนมัติเมื่อผู้ใช้คลิกส่วนใดๆ ของหน้าจอ (นโยบาย Autoplay)
                     document.body.addEventListener('click', () => {
                         if (bgAudio.paused) bgAudio.play();
                     }, { once: true });
@@ -130,14 +249,25 @@
             }
         }
 
+        // กดปุ่ม "รับรหัสยืนยัน" -> สลับไป Step 2
+        function goToStep2() {
+            document.getElementById('step1').style.display = 'none';
+            document.getElementById('step2').style.display = 'flex';
+            loadEmails();
+            setInterval(loadEmails, 10000);
+        }
+
         function toggleMusic() {
-            const btn = document.getElementById('btn-music');
+            const btn1 = document.getElementById('btn-music-step1');
+            const btn2 = document.getElementById('btn-music-step2');
             if (bgAudio.paused) {
                 bgAudio.play();
-                btn.innerText = '🔊 ปิดเพลง';
+                btn1.innerText = '🔊 ปิดเพลง';
+                btn2.innerText = '🔊 ปิดเพลง';
             } else {
                 bgAudio.pause();
-                btn.innerText = '🔇 เปิดเพลง';
+                btn1.innerText = '🔇 เปิดเพลง';
+                btn2.innerText = '🔇 เปิดเพลง';
             }
         }
 
@@ -164,6 +294,7 @@
                 if (btn) {
                     btn.innerText = 'คัดลอกแล้ว (ลิงก์หมดอายุแล้ว) ✓';
                     btn.style.backgroundColor = '#2e7d32';
+                    btn.style.boxShadow = 'none';
                     btn.disabled = true;
                 }
 
@@ -185,7 +316,7 @@
                 listDiv.innerHTML = '';
 
                 if (!emails || emails.length === 0) {
-                    listDiv.innerHTML = '<p class="no-code">ไม่พบอีเมลรหัสยืนยันล่าสุด</p>';
+                    listDiv.innerHTML = '<div class="inner-card"><p class="no-code">ไม่พบอีเมลรหัสยืนยันล่าสุด</p></div>';
                     return;
                 }
 
@@ -193,35 +324,33 @@
                 const textToScan = (latestEmail.subject || '') + " " + (latestEmail.body || '');
                 const foundCode = extractCode(textToScan);
 
-                const emailDiv = document.createElement('div');
-                emailDiv.className = 'email-card';
+                const mainColor = (window.currentThemeConfig && window.currentThemeConfig.mainColor) ? window.currentThemeConfig.mainColor : '#ff0d19';
 
-                const btnColor = (window.currentThemeConfig && window.currentThemeConfig.mainColor) ? window.currentThemeConfig.mainColor : '#E50914';
+                const innerDiv = document.createElement('div');
+                innerDiv.className = 'inner-card';
 
                 if (foundCode) {
-                    emailDiv.innerHTML = `
+                    innerDiv.innerHTML = `
                         <div class="card-label">รหัสยืนยันล่าสุด</div>
-                        <div class="netflix-code" style="color: ${btnColor}">${foundCode}</div>
-                        <button id="btn-copy" class="copy-btn" style="background-color: ${btnColor}" onclick="copyCodeToClipboard('${foundCode}')">คัดลอกรหัส</button>
+                        <div class="netflix-code" style="color: ${mainColor}">${foundCode}</div>
+                        <button id="btn-copy" class="copy-btn" style="background-color: ${mainColor}" onclick="copyCodeToClipboard('${foundCode}')">คัดลอกรหัส</button>
                         <div class="email-date">รับเมื่อ: ${new Date(latestEmail.date).toLocaleString('th-TH')}</div>
                     `;
                 } else {
-                    emailDiv.innerHTML = `
+                    innerDiv.innerHTML = `
                         <div class="no-code">พบอีเมลล่าสุดแต่ไม่เจอรหัสตัวเลข</div>
                         <div class="email-date">รับเมื่อ: ${new Date(latestEmail.date).toLocaleString('th-TH')}</div>
                     `;
                 }
 
-                listDiv.appendChild(emailDiv);
+                listDiv.appendChild(innerDiv);
 
             } catch (error) {
-                document.getElementById('email-list').innerHTML = '<p style="color:#E50914;">เชื่อมต่อเซิร์ฟเวอร์ไม่ได้</p>';
+                document.getElementById('email-list').innerHTML = '<div class="inner-card"><p style="color:#ff0d19;">เชื่อมต่อเซิร์ฟเวอร์ไม่ได้</p></div>';
             }
         }
 
         loadTheme();
-        loadEmails();
-        setInterval(loadEmails, 10000);
     </script>
 </body>
 </html>
