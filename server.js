@@ -45,11 +45,11 @@ app.get('/api/theme/:token', (req, res) => {
         return res.status(404).json({ error: 'Token invalid' });
     }
     const config = { ...validTokens.get(token) };
-    delete config.emailPass; // ซ่อน Password ไม่ให้ฝั่ง Client เห็น
+    delete config.emailPass;
     res.json(config);
 });
 
-// 3. หน้าเปิดดูรหัส (ฉีด Open Graph Meta Tags)
+// 3. หน้าเปิดดูรหัส
 app.get('/view/:token', (req, res) => {
     const { token } = req.params;
     if (!validTokens.has(token)) {
@@ -97,7 +97,7 @@ app.post('/api/invalidate-token', (req, res) => {
     res.status(400).json({ error: 'Token invalid' });
 });
 
-// 5. API ดึงอีเมลผ่าน IMAP (อ่านตามข้อมูล Credential ของ Token นั้นๆ)
+// 5. API ดึงอีเมลผ่าน IMAP
 app.get('/api/emails/:token', async (req, res) => {
     const { token } = req.params;
     if (!validTokens.has(token)) {
@@ -150,7 +150,7 @@ app.get('/api/emails/:token', async (req, res) => {
     }
 });
 
-// 6. หน้า Admin Dashboard (พร้อมส่วนกรอก Email Credentials บนสุด)
+// 6. หน้า Admin Dashboard
 app.get('/', (req, res) => {
     res.send(`
         <!DOCTYPE html>
