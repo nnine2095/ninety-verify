@@ -13,7 +13,7 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 const validTokens = new Map();
 
-// 1. API สร้าง Link พร้อมบันทึกข้อมูล Custom Meta Preview
+// 1. API สร้าง Link
 app.post('/api/generate-link', (req, res) => {
     const tokenId = crypto.randomBytes(8).toString('hex');
     const themeConfig = {
@@ -45,7 +45,7 @@ app.get('/api/theme/:token', (req, res) => {
     res.json(validTokens.get(token));
 });
 
-// 3. หน้าเปิดดูรหัส (ฉีด Open Graph Meta Tags ตามที่ตั้งไว้ใน Admin)
+// 3. หน้าเปิดดูรหัส (ฉีด Open Graph Meta Tags)
 app.get('/view/:token', (req, res) => {
     const { token } = req.params;
     if (!validTokens.has(token)) {
@@ -77,7 +77,6 @@ app.get('/view/:token', (req, res) => {
     const config = validTokens.get(token);
     let html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
 
-    // แทนที่ค่า Meta Tag สำหรับการพรีวิวลิงก์เวลาแชร์
     html = html.replace(/{{META_TITLE}}/g, config.metaTitle);
     html = html.replace(/{{META_DESC}}/g, config.metaDesc);
 
@@ -134,7 +133,7 @@ app.get('/api/emails', async (req, res) => {
     }
 });
 
-// 6. หน้า Admin Dashboard (เพิ่มส่วนตั้งค่าพรีวิวลิงก์แชท)
+// 6. หน้า Admin Dashboard (พร้อมระบบ Auto-Save LocalStorage)
 app.get('/', (req, res) => {
     res.send(`
         <!DOCTYPE html>
@@ -171,64 +170,64 @@ app.get('/', (req, res) => {
                 <div class="section-title">1. ข้อความพรีวิวเวลาแชร์ลิงก์ (Preview Text)</div>
                 <div class="form-group">
                     <label>ชื่อหัวข้อลิงก์ (Title)</label>
-                    <input type="text" id="metaTitle" value="Verification Center" placeholder="เช่น Verification Center">
+                    <input type="text" id="metaTitle" value="Verification Center" placeholder="เช่น Verification Center" onchange="saveToLocalStorage()">
                 </div>
                 <div class="form-group">
                     <label>ข้อความอธิบายใต้ลิงก์ (Description)</label>
-                    <input type="text" id="metaDesc" value="ระบบรับรหัสยืนยันตัวตนชั่วคราว" placeholder="เช่น คลิกเพื่อรับรหัสยืนยัน">
+                    <input type="text" id="metaDesc" value="ระบบรับรหัสยืนยันตัวตนชั่วคราว" placeholder="เช่น คลิกเพื่อรับรหัสยืนยัน" onchange="saveToLocalStorage()">
                 </div>
 
                 <div class="section-title">2. ข้อมูลลูกค้าสำหรับหน้าแรก</div>
                 <div class="row-group">
                     <div class="form-group">
                         <label>Screen</label>
-                        <input type="text" id="screenTv" placeholder="เช่น จอ 1">
+                        <input type="text" id="screenTv" placeholder="เช่น จอ 1" onchange="saveToLocalStorage()">
                     </div>
                     <div class="form-group">
                         <label>PIN</label>
-                        <input type="text" id="pin" placeholder="เช่น 1234">
+                        <input type="text" id="pin" placeholder="เช่น 1234" onchange="saveToLocalStorage()">
                     </div>
                 </div>
                 <div class="form-group">
                     <label>Mail (อีเมลผู้ใช้)</label>
-                    <input type="text" id="mail" placeholder="user@gmail.com">
+                    <input type="text" id="mail" placeholder="user@gmail.com" onchange="saveToLocalStorage()">
                 </div>
 
                 <div class="section-title">3. ตกแต่งพื้นหลัง & รูปภาพ (เลือกจากในเครื่อง)</div>
                 <div class="form-group">
                     <label>รูปแบบพื้นหลัง</label>
-                    <select id="bgType" onchange="toggleBgInputs()">
+                    <select id="bgType" onchange="toggleBgInputs(); saveToLocalStorage();">
                         <option value="color">สีพื้นหลัง (Solid Color)</option>
                         <option value="image">รูปภาพพื้นหลัง (อัปโหลดจากเครื่อง)</option>
                     </select>
                 </div>
                 <div class="form-group" id="group-bgColor">
                     <label>สีพื้นหลัง</label>
-                    <input type="color" id="bgColor" value="#0f0f0f">
+                    <input type="color" id="bgColor" value="#0f0f0f" onchange="saveToLocalStorage()">
                 </div>
                 <div class="form-group" id="group-bgImage" style="display: none;">
                     <label>เลือกรูปภาพพื้นหลัง</label>
-                    <input type="file" id="bgImageFile" accept="image/*">
+                    <input type="file" id="bgImageFile" accept="image/*" onchange="saveImagesToLocalStorage()">
                 </div>
                 <div class="form-group">
                     <label>เลือกรูปโลโก้ / รูปหัวข้อ (ถ้ามี)</label>
-                    <input type="file" id="logoFile" accept="image/*">
+                    <input type="file" id="logoFile" accept="image/*" onchange="saveImagesToLocalStorage()">
                 </div>
 
                 <div class="section-title">4. ธีมสี & เพลงประกอบ</div>
                 <div class="row-group">
                     <div class="form-group">
                         <label>สีปุ่ม / ไฮไลท์</label>
-                        <input type="color" id="mainColor" value="#ff0d19">
+                        <input type="color" id="mainColor" value="#ff0d19" onchange="saveToLocalStorage()">
                     </div>
                     <div class="form-group">
                         <label>สีข้อความ</label>
-                        <input type="color" id="textColor" value="#ffffff">
+                        <input type="color" id="textColor" value="#ffffff" onchange="saveToLocalStorage()">
                     </div>
                 </div>
                 <div class="form-group">
                     <label>URL เพลงประกอบ (.mp3)</label>
-                    <input type="url" id="musicUrl" placeholder="https://example.com/song.mp3">
+                    <input type="url" id="musicUrl" placeholder="https://example.com/song.mp3" onchange="saveToLocalStorage()">
                 </div>
 
                 <button class="btn" onclick="generateCustomLink()">กดสร้าง One-Time Link</button>
@@ -238,6 +237,7 @@ app.get('/', (req, res) => {
             </div>
 
             <script>
+                // สลับประเภทพื้นหลัง
                 function toggleBgInputs() {
                     const type = document.getElementById('bgType').value;
                     if (type === 'image') {
@@ -259,12 +259,67 @@ app.get('/', (req, res) => {
                     });
                 }
 
-                async function generateCustomLink() {
+                // 💾 บันทึกค่าข้อความ สี และตัวเลือก ลงใน LocalStorage
+                function saveToLocalStorage() {
+                    const data = {
+                        metaTitle: document.getElementById('metaTitle').value,
+                        metaDesc: document.getElementById('metaDesc').value,
+                        screenTv: document.getElementById('screenTv').value,
+                        pin: document.getElementById('pin').value,
+                        mail: document.getElementById('mail').value,
+                        bgType: document.getElementById('bgType').value,
+                        bgColor: document.getElementById('bgColor').value,
+                        mainColor: document.getElementById('mainColor').value,
+                        textColor: document.getElementById('textColor').value,
+                        musicUrl: document.getElementById('musicUrl').value
+                    };
+                    localStorage.setItem('admin_form_config', JSON.stringify(data));
+                }
+
+                // 💾 บันทึกรูปภาพ (Base64) ลงใน LocalStorage
+                async function saveImagesToLocalStorage() {
                     const bgFile = document.getElementById('bgImageFile').files[0];
                     const logoFile = document.getElementById('logoFile').files[0];
 
-                    const bgImageData = await fileToBase64(bgFile);
-                    const logoData = await fileToBase64(logoFile);
+                    if (bgFile) {
+                        const bgBase64 = await fileToBase64(bgFile);
+                        localStorage.setItem('admin_saved_bg', bgBase64);
+                    }
+                    if (logoFile) {
+                        const logoBase64 = await fileToBase64(logoFile);
+                        localStorage.setItem('admin_saved_logo', logoBase64);
+                    }
+                    saveToLocalStorage();
+                }
+
+                // 🔄 ดึงค่าเดิมที่เคยกรอกไว้กลับมาแสดงเมื่อเปิดหน้า Admin
+                function loadFromLocalStorage() {
+                    const saved = localStorage.getItem('admin_form_config');
+                    if (saved) {
+                        const data = JSON.parse(saved);
+                        if (data.metaTitle) document.getElementById('metaTitle').value = data.metaTitle;
+                        if (data.metaDesc) document.getElementById('metaDesc').value = data.metaDesc;
+                        if (data.screenTv) document.getElementById('screenTv').value = data.screenTv;
+                        if (data.pin) document.getElementById('pin').value = data.pin;
+                        if (data.mail) document.getElementById('mail').value = data.mail;
+                        if (data.bgType) document.getElementById('bgType').value = data.bgType;
+                        if (data.bgColor) document.getElementById('bgColor').value = data.bgColor;
+                        if (data.mainColor) document.getElementById('mainColor').value = data.mainColor;
+                        if (data.textColor) document.getElementById('textColor').value = data.textColor;
+                        if (data.musicUrl) document.getElementById('musicUrl').value = data.musicUrl;
+
+                        toggleBgInputs();
+                    }
+                }
+
+                async function generateCustomLink() {
+                    saveToLocalStorage();
+
+                    const bgFile = document.getElementById('bgImageFile').files[0];
+                    const logoFile = document.getElementById('logoFile').files[0];
+
+                    let bgImageData = bgFile ? await fileToBase64(bgFile) : (localStorage.getItem('admin_saved_bg') || '');
+                    let logoData = logoFile ? await fileToBase64(logoFile) : (localStorage.getItem('admin_saved_logo') || '');
 
                     const themeConfig = {
                         metaTitle: document.getElementById('metaTitle').value,
@@ -311,6 +366,9 @@ app.get('/', (req, res) => {
                         }, 2000);
                     });
                 }
+
+                // สั่งโหลดข้อมูลเดิมทันทีเมื่อเปิดหน้า Admin
+                loadFromLocalStorage();
             </script>
         </body>
         </html>
