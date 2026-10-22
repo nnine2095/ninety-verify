@@ -122,7 +122,7 @@ app.get('/api/emails', async (req, res) => {
     }
 });
 
-// 6. หน้า Admin Dashboard (พร้อมช่องกรอก Screen, PIN, Mail)
+// 6. หน้า Admin Dashboard
 app.get('/', (req, res) => {
     res.send(`
         <!DOCTYPE html>
@@ -158,8 +158,8 @@ app.get('/', (req, res) => {
                 <div class="section-title">1. ข้อมูลลูกค้าสำหรับหน้าแรก</div>
                 <div class="row-group">
                     <div class="form-group">
-                        <label>Screen / TV</label>
-                        <input type="text" id="screenTv" placeholder="เช่น จอ 1 / TV 01">
+                        <label>Screen</label>
+                        <input type="text" id="screenTv" placeholder="เช่น จอ 1">
                     </div>
                     <div class="form-group">
                         <label>PIN</label>

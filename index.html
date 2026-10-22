@@ -22,7 +22,7 @@
             min-height: 100vh; 
         }
 
-        /* ----- โครงสร้างหน้า Step 1 (ข้อมูลโปรไฟล์) ----- */
+        /* โครงสร้างหน้า Step 1 */
         .step1-container {
             max-width: 440px;
             width: 100%;
@@ -94,9 +94,9 @@
             filter: brightness(1.1);
         }
 
-        /* ----- โครงสร้างหน้า Step 2 (การ์ดรหัสยืนยัน) ----- */
+        /* โครงสร้างหน้า Step 2 */
         .step2-wrapper {
-            display: none; /* ซ่อนไว้ก่อน */
+            display: none;
             width: 100%;
             max-width: 440px;
             flex-direction: column;
@@ -155,13 +155,13 @@
 </head>
 <body>
 
-    <!-- 📍 STEP 1: หน้าแสดงข้อมูลตามรูปวาด -->
+    <!-- STEP 1: หน้าแรกแสดง Screen, PIN, Mail -->
     <div id="step1" class="step1-container">
         <button id="btn-music-step1" class="music-control" onclick="toggleMusic()">🔊 ปิดเพลง</button>
         
         <div class="row-2col">
             <div class="info-box">
-                <div class="info-title">Screen / TV</div>
+                <div class="info-title">Screen</div>
                 <div class="info-value" id="val-screen">-</div>
             </div>
             <div class="info-box">
@@ -178,7 +178,7 @@
         <button class="btn-action" id="btn-goto-step2" onclick="goToStep2()">รับรหัสยืนยัน</button>
     </div>
 
-    <!-- 📍 STEP 2: หน้าการ์ดรหัสยืนยัน -->
+    <!-- STEP 2: หน้าแสดงการ์ดรหัสยืนยัน -->
     <div id="step2" class="step2-wrapper">
         <div class="outer-card">
             <button id="btn-music-step2" class="music-control" onclick="toggleMusic()">🔊 ปิดเพลง</button>
@@ -201,38 +201,32 @@
         const currentToken = window.location.pathname.split('/').pop();
         let bgAudio = document.getElementById('bg-audio');
 
-        // โหลดข้อมูลธีมและโปรไฟล์
         async function loadTheme() {
             try {
                 const res = await fetch(`/api/theme/${currentToken}`);
                 if (!res.ok) return;
                 const config = await res.json();
 
-                // แสดงข้อมูล Step 1
                 document.getElementById('val-screen').innerText = config.screenTv || '-';
                 document.getElementById('val-pin').innerText = config.pin || '-';
                 document.getElementById('val-mail').innerText = config.mail || '-';
 
-                // ตั้งค่าพื้นหลัง
                 if (config.bgType === 'image' && config.bgImage) {
                     document.body.style.backgroundImage = `url('${config.bgImage}')`;
                 } else if (config.bgColor) {
                     document.body.style.backgroundColor = config.bgColor;
                 }
 
-                // ตั้งค่าโลโก้ Step 2
                 if (config.logoUrl) {
                     document.getElementById('logo-container').innerHTML = `<img src="${config.logoUrl}" class="logo-img">`;
                 } else if (config.mainColor) {
                     document.getElementById('logo-text').style.color = config.mainColor;
                 }
 
-                // ตั้งค่าสีปุ่ม
                 if (config.mainColor) {
                     document.getElementById('btn-goto-step2').style.backgroundColor = config.mainColor;
                 }
 
-                // ตั้งค่าเพลงประกอบ
                 if (config.musicUrl) {
                     bgAudio.src = config.musicUrl;
                     document.getElementById('btn-music-step1').style.display = 'block';
@@ -249,7 +243,6 @@
             }
         }
 
-        // กดปุ่ม "รับรหัสยืนยัน" -> สลับไป Step 2
         function goToStep2() {
             document.getElementById('step1').style.display = 'none';
             document.getElementById('step2').style.display = 'flex';
