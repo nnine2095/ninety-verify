@@ -14,7 +14,7 @@ app.use(express.json());
 // ----------------------------------------------------
 const validTokens = new Set();
 
-// API สำหรับสร้างลิงก์ชั่วคราวใหม่
+// 📍 API สำหรับกดสร้างลิงก์ชั่วคราว
 app.get('/api/generate-link', (req, res) => {
     const tokenId = crypto.randomBytes(8).toString('hex');
     validTokens.add(tokenId);
@@ -22,7 +22,7 @@ app.get('/api/generate-link', (req, res) => {
     res.json({ url: oneTimeUrl, token: tokenId });
 });
 
-// ตรวจสอบ Token ก่อนแสดงหน้าเว็บ index.html
+// 📍 หน้าสำหรับเปิดดูรหัส Netflix ผ่าน Token (ส่ง index.html)
 app.get('/view/:token', (req, res) => {
     const { token } = req.params;
     if (!validTokens.has(token)) {
@@ -50,10 +50,11 @@ app.get('/view/:token', (req, res) => {
             </html>
         `);
     }
+    // ส่งไฟล์หน้าแสดงรหัส Netflix ให้คนเปิดลิงก์
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// API ทำลาย Token เมื่อกดคัดลอกรหัส
+// 📍 API สำหรับลบ Token เมื่อกดคัดลอกรหัส
 app.post('/api/invalidate-token', (req, res) => {
     const { token } = req.body;
     if (validTokens.has(token)) {
@@ -106,7 +107,7 @@ app.get('/api/emails', async (req, res) => {
 });
 
 // ----------------------------------------------------
-// 3. หน้าแรกสำหรับ Admin (สร้างและคัดลอกลิงก์)
+// 3. หน้าแรกหลัก (Admin - กดสร้างลิงก์)
 // ----------------------------------------------------
 app.get('/', (req, res) => {
     res.send(`
@@ -174,5 +175,5 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
