@@ -3,13 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Netflix Code Verification</title>
+    <title>Verification Code</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { 
             font-family: 'Prompt', sans-serif; 
-            background: linear-gradient(135deg, #0f0f0f 0%, #1a0002 100%);
+            background-color: #0f0f0f;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
             color: #ffffff; 
             padding: 20px; 
             display: flex; 
@@ -20,18 +23,20 @@
         .container { 
             max-width: 420px; 
             width: 100%; 
-            background: rgba(24, 24, 24, 0.85); 
-            backdrop-filter: blur(10px); 
+            background: rgba(20, 20, 20, 0.88); 
+            backdrop-filter: blur(12px); 
             padding: 35px 25px; 
             border-radius: 20px; 
-            border: 1px solid rgba(229, 9, 20, 0.2); 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
             box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7); 
             text-align: center; 
+            position: relative;
         }
-        .logo { font-size: 28px; font-weight: 700; color: #E50914; letter-spacing: 1px; margin-bottom: 20px; text-transform: uppercase; }
-        .email-card { background: #222222; border: 1px solid #333333; border-radius: 14px; padding: 25px 20px; margin-top: 10px; }
-        .card-label { font-size: 14px; color: #aaaaaa; margin-bottom: 8px; }
-        .netflix-code { font-size: 50px; font-weight: 700; color: #ffffff; letter-spacing: 8px; margin: 15px 0 20px 0; text-shadow: 0 0 15px rgba(229, 9, 20, 0.6); }
+        .logo-img { max-width: 180px; height: auto; margin-bottom: 15px; }
+        .logo-text { font-size: 26px; font-weight: 700; color: #E50914; letter-spacing: 1px; margin-bottom: 20px; text-transform: uppercase; }
+        .email-card { background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 25px 20px; margin-top: 10px; }
+        .card-label { font-size: 14px; opacity: 0.8; margin-bottom: 8px; }
+        .netflix-code { font-size: 48px; font-weight: 700; letter-spacing: 8px; margin: 15px 0 20px 0; text-shadow: 0 0 15px rgba(255,255,255,0.2); }
         .copy-btn { 
             background-color: #E50914; 
             color: #ffffff; 
@@ -45,21 +50,98 @@
             transition: all 0.3s ease; 
             width: 100%; 
         }
-        .copy-btn:hover { background-color: #ff0f1a; transform: translateY(-2px); }
-        .email-date { font-size: 12px; color: #777777; margin-top: 18px; }
-        .no-code { font-size: 15px; color: #888888; padding: 20px 0; }
+        .copy-btn:hover { opacity: 0.9; transform: translateY(-2px); }
+        .email-date { font-size: 12px; opacity: 0.6; margin-top: 18px; }
+        .no-code { font-size: 15px; opacity: 0.7; padding: 20px 0; }
+        
+        /* ปุ่มเปิด/ปิดเพลง */
+        .music-control {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            display: none;
+            font-family: 'Prompt';
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="logo">NETFLIX CODE</div>
+        <button id="btn-music" class="music-control" onclick="toggleMusic()">🔊 ปิดเพลง</button>
+        
+        <div id="logo-container">
+            <div class="logo-text" id="logo-text">VERIFICATION CODE</div>
+        </div>
+
         <div id="email-list">กำลังรอดึงรหัส...</div>
     </div>
 
+    <audio id="bg-audio" loop></audio>
+
     <script>
         const currentToken = window.location.pathname.split('/').pop();
+        let bgAudio = document.getElementById('bg-audio');
 
-        function extractNetflixCode(text) {
+        // 1. โหลดการตั้งค่าธีมและเพลง
+        async function loadTheme() {
+            try {
+                const res = await fetch(`/api/theme/${currentToken}`);
+                if (!res.ok) return;
+                const config = await res.json();
+
+                // ตั้งค่าพื้นหลัง
+                if (config.bgType === 'image' && config.bgImage) {
+                    document.body.style.backgroundImage = `url('${config.bgImage}')`;
+                } else if (config.bgColor) {
+                    document.body.style.backgroundColor = config.bgColor;
+                }
+
+                // ตั้งค่าโลโก้
+                if (config.logoUrl) {
+                    document.getElementById('logo-container').innerHTML = `<img src="${config.logoUrl}" class="logo-img">`;
+                } else {
+                    document.getElementById('logo-text').style.color = config.mainColor || '#E50914';
+                }
+
+                // ตั้งค่าสีข้อความและปุ่ม
+                document.body.style.color = config.textColor || '#ffffff';
+                
+                // ตั้งค่าเพลงประกอบ
+                if (config.musicUrl) {
+                    bgAudio.src = config.musicUrl;
+                    const musicBtn = document.getElementById('btn-music');
+                    musicBtn.style.display = 'block';
+                    
+                    // เล่นเพลงอัตโนมัติเมื่อผู้ใช้คลิกส่วนใดๆ ของหน้าจอ (นโยบาย Autoplay)
+                    document.body.addEventListener('click', () => {
+                        if (bgAudio.paused) bgAudio.play();
+                    }, { once: true });
+                }
+
+                window.currentThemeConfig = config;
+            } catch (err) {
+                console.error('โหลดธีมไม่สำเร็จ:', err);
+            }
+        }
+
+        function toggleMusic() {
+            const btn = document.getElementById('btn-music');
+            if (bgAudio.paused) {
+                bgAudio.play();
+                btn.innerText = '🔊 ปิดเพลง';
+            } else {
+                bgAudio.pause();
+                btn.innerText = '🔇 เปิดเพลง';
+            }
+        }
+
+        function extractCode(text) {
             if (!text) return null;
             const keywordMatch = text.match(/(?:รหัส|code|verification|sign in|ยืนยัน)[\s\S]{0,30}?\b(\d{4,6})\b/i);
             if (keywordMatch) return keywordMatch[1];
@@ -103,27 +185,29 @@
                 listDiv.innerHTML = '';
 
                 if (!emails || emails.length === 0) {
-                    listDiv.innerHTML = '<p class="no-code">ไม่พบอีเมลรหัสยืนยันล่าสุดจาก Netflix</p>';
+                    listDiv.innerHTML = '<p class="no-code">ไม่พบอีเมลรหัสยืนยันล่าสุด</p>';
                     return;
                 }
 
                 const latestEmail = emails[0];
                 const textToScan = (latestEmail.subject || '') + " " + (latestEmail.body || '');
-                const foundCode = extractNetflixCode(textToScan);
+                const foundCode = extractCode(textToScan);
 
                 const emailDiv = document.createElement('div');
                 emailDiv.className = 'email-card';
 
+                const btnColor = (window.currentThemeConfig && window.currentThemeConfig.mainColor) ? window.currentThemeConfig.mainColor : '#E50914';
+
                 if (foundCode) {
                     emailDiv.innerHTML = `
                         <div class="card-label">รหัสยืนยันล่าสุด</div>
-                        <div class="netflix-code">${foundCode}</div>
-                        <button id="btn-copy" class="copy-btn" onclick="copyCodeToClipboard('${foundCode}')">คัดลอกรหัส</button>
+                        <div class="netflix-code" style="color: ${btnColor}">${foundCode}</div>
+                        <button id="btn-copy" class="copy-btn" style="background-color: ${btnColor}" onclick="copyCodeToClipboard('${foundCode}')">คัดลอกรหัส</button>
                         <div class="email-date">รับเมื่อ: ${new Date(latestEmail.date).toLocaleString('th-TH')}</div>
                     `;
                 } else {
                     emailDiv.innerHTML = `
-                        <div class="no-code">พบอีเมลจาก Netflix แต่ไม่เจอรหัสตัวเลข</div>
+                        <div class="no-code">พบอีเมลล่าสุดแต่ไม่เจอรหัสตัวเลข</div>
                         <div class="email-date">รับเมื่อ: ${new Date(latestEmail.date).toLocaleString('th-TH')}</div>
                     `;
                 }
@@ -135,6 +219,7 @@
             }
         }
 
+        loadTheme();
         loadEmails();
         setInterval(loadEmails, 10000);
     </script>
