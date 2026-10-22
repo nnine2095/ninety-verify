@@ -202,7 +202,7 @@
     <audio id="bg-audio" loop></audio>
 
     <script>
-        const currentToken = window.location.pathname.split('/').pop();
+        const response = await fetch(`/api/emails/${currentToken}`);
         let bgAudio = document.getElementById('bg-audio');
 
         async function loadTheme() {
