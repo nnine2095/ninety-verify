@@ -1,147 +1,65 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Netflix Code Verification</title>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { 
-            font-family: 'Prompt', sans-serif; 
-            background: linear-gradient(135deg, #0f0f0f 0%, #1a0002 100%);
-            color: #ffffff; 
-            padding: 20px; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh; 
-        }
-        .container { 
-            max-width: 420px; 
-            width: 100%; 
-            background: rgba(24, 24, 24, 0.85); 
-            backdrop-filter: blur(10px); 
-            padding: 35px 25px; 
-            border-radius: 20px; 
-            border: 1px solid rgba(229, 9, 20, 0.2); 
-            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7); 
-            text-align: center; 
-        }
-        .logo { font-size: 28px; font-weight: 700; color: #E50914; letter-spacing: 1px; margin-bottom: 20px; text-transform: uppercase; }
-        .email-card { background: #222222; border: 1px solid #333333; border-radius: 14px; padding: 25px 20px; margin-top: 10px; }
-        .card-label { font-size: 14px; color: #aaaaaa; margin-bottom: 8px; }
-        .netflix-code { font-size: 50px; font-weight: 700; color: #ffffff; letter-spacing: 8px; margin: 15px 0 20px 0; text-shadow: 0 0 15px rgba(229, 9, 20, 0.6); }
-        .copy-btn { 
-            background-color: #E50914; 
-            color: #ffffff; 
-            border: none; 
-            padding: 12px 28px; 
-            font-size: 16px; 
-            font-weight: 600; 
-            font-family: 'Prompt', sans-serif; 
-            border-radius: 30px; 
-            cursor: pointer; 
-            transition: all 0.3s ease; 
-            width: 100%; 
-        }
-        .copy-btn:hover { background-color: #ff0f1a; transform: translateY(-2px); }
-        .email-date { font-size: 12px; color: #777777; margin-top: 18px; }
-        .no-code { font-size: 15px; color: #888888; padding: 20px 0; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="logo">NETFLIX CODE</div>
-        <div id="email-list">กำลังรอดึงรหัส...</div>
-    </div>
-
-    <script>
-        // ดึง Token จาก URL ปัจจุบัน
-        const currentToken = window.location.pathname.split('/').pop();
-
-        function extractNetflixCode(text) {
-            if (!text) return null;
-            const keywordMatch = text.match(/(?:รหัส|code|verification|sign in|ยืนยัน)[\s\S]{0,30}?\b(\d{4,6})\b/i);
-            if (keywordMatch) return keywordMatch[1];
-            const standaloneMatch = text.match(/\b(\d{4}|\d{6})\b/);
-            if (standaloneMatch) return standaloneMatch[1];
-            return null;
-        }
-
-        async function copyCodeToClipboard(codeText) {
-            try {
-                // 1. คัดลอกรหัสเข้า Clipboard
-                await navigator.clipboard.writeText(codeText);
-
-                // 2. ทำลาย Token บนเซิร์ฟเวอร์
-                await fetch('/api/invalidate-token', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token: currentToken })
-                });
-
-                // 3. ปรับสถานะปุ่ม
-                const btn = document.getElementById('btn-copy');
-                if (btn) {
-                    btn.innerText = 'คัดลอกแล้ว (ลิงก์หมดอายุแล้ว) ✓';
-                    btn.style.backgroundColor = '#2e7d32';
-                    btn.disabled = true;
-                }
-
-                // 4. รีเฟรชหน้าเว็บเพื่อแสดงหน้าลิงก์หมดอายุ
-                setTimeout(() => {
-                    window.location.reload();
-                }, 2000);
-
-            } catch (err) {
-                console.error('คัดลอกไม่สำเร็จ:', err);
-            }
-        }
-
-        async function loadEmails() {
-            try {
-                const response = await fetch('/api/emails');
-                const emails = await response.json();
+// หน้าแรกสำหรับสร้างลิงก์ (Admin) พร้อมปุ่มคัดลอก
+app.get('/', (req, res) => {
+    res.send(`
+        <!DOCTYPE html>
+        <html lang="th">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Netflix Link Generator</title>
+            <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">
+            <style>
+                * { box-sizing: border-box; margin: 0; padding: 0; }
+                body { font-family: 'Prompt', sans-serif; background: #141414; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+                .card { background: #222; padding: 35px 25px; border-radius: 16px; border: 1px solid #333; text-align: center; max-width: 450px; width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+                h2 { color: #E50914; margin-bottom: 20px; font-size: 24px; font-weight: 700; }
+                .btn { background: #E50914; color: #fff; border: none; padding: 12px 20px; font-size: 16px; border-radius: 8px; cursor: pointer; font-family: 'Prompt'; font-weight: 600; width: 100%; transition: all 0.2s ease; }
+                .btn:hover { background: #f40612; }
+                .btn-copy { background: #333; margin-top: 10px; display: none; }
+                .btn-copy:hover { background: #444; }
+                .btn-copy.success { background: #2e7d32; }
+                input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #111; color: #fff; text-align: center; font-size: 14px; margin-top: 15px; display: none; }
+            </style>
+        </head>
+        <body>
+            <div class="card">
+                <h2>สร้าง One-Time Link</h2>
+                <button class="btn" onclick="generateLink()">กดสร้างลิงก์ใหม่</button>
                 
-                const listDiv = document.getElementById('email-list');
-                listDiv.innerHTML = '';
+                <input type="text" id="link-output" readonly onclick="this.select()">
+                <button id="btn-copy-link" class="btn btn-copy" onclick="copyGeneratedLink()">คัดลอกลิงก์</button>
+            </div>
 
-                if (emails.length === 0) {
-                    listDiv.innerHTML = '<p class="no-code">ไม่พบอีเมลจาก Netflix</p>';
-                    return;
+            <script>
+                async function generateLink() {
+                    const res = await fetch('/api/generate-link');
+                    const data = await res.json();
+                    
+                    const input = document.getElementById('link-output');
+                    const copyBtn = document.getElementById('btn-copy-link');
+                    
+                    input.value = data.url;
+                    input.style.display = 'block';
+                    
+                    copyBtn.style.display = 'block';
+                    copyBtn.innerText = 'คัดลอกลิงก์';
+                    copyBtn.classList.remove('success');
                 }
 
-                const latestEmail = emails[0];
-                const textToScan = latestEmail.subject + " " + latestEmail.body;
-                const foundCode = extractNetflixCode(textToScan);
-
-                const emailDiv = document.createElement('div');
-                emailDiv.className = 'email-card';
-
-                if (foundCode) {
-                    emailDiv.innerHTML = `
-                        <div class="card-label">รหัสยืนยันล่าสุด</div>
-                        <div class="netflix-code">${foundCode}</div>
-                        <button id="btn-copy" class="copy-btn" onclick="copyCodeToClipboard('${foundCode}')">คัดลอกรหัส</button>
-                        <div class="email-date">รับเมื่อ: ${new Date(latestEmail.date).toLocaleString('th-TH')}</div>
-                    `;
-                } else {
-                    emailDiv.innerHTML = `
-                        <div class="no-code">พบอีเมลแต่ไม่เจอรหัสยืนยัน</div>
-                        <div class="email-date">รับเมื่อ: ${new Date(latestEmail.date).toLocaleString('th-TH')}</div>
-                    `;
+                function copyGeneratedLink() {
+                    const linkInput = document.getElementById('link-output');
+                    navigator.clipboard.writeText(linkInput.value).then(() => {
+                        const copyBtn = document.getElementById('btn-copy-link');
+                        copyBtn.innerText = 'คัดลอกลิงก์เรียบร้อย! ✓';
+                        copyBtn.classList.add('success');
+                        setTimeout(() => {
+                            copyBtn.innerText = 'คัดลอกลิงก์';
+                            copyBtn.classList.remove('success');
+                        }, 2000);
+                    });
                 }
-
-                listDiv.appendChild(emailDiv);
-
-            } catch (error) {
-                document.getElementById('email-list').innerHTML = '<p style="color:#E50914;">เชื่อมต่อเซิร์ฟเวอร์ไม่ได้</p>';
-            }
-        }
-
-        loadEmails();
-        setInterval(loadEmails, 10000);
-    </script>
-</body>
-</html>
+            </script>
+        </body>
+        </html>
+    `);
+});
