@@ -3,7 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verification Center</title>
+    <title>{{META_TITLE}}</title>
+
+    <!-- Open Graph Meta Tags สำหรับแสดงผลข้อความพรีวิวเวลาส่งลิงก์ในแชท -->
+    <meta property="og:title" content="{{META_TITLE}}" />
+    <meta property="og:description" content="{{META_DESC}}" />
+    <meta name="description" content="{{META_DESC}}" />
+
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -22,7 +28,7 @@
             min-height: 100vh; 
         }
 
-        /* โครงสร้างหน้า Step 1 */
+        /* STEP 1 */
         .step1-container {
             max-width: 440px;
             width: 100%;
@@ -94,7 +100,7 @@
             filter: brightness(1.1);
         }
 
-        /* โครงสร้างหน้า Step 2 */
+        /* STEP 2 */
         .step2-wrapper {
             display: none;
             width: 100%;
@@ -155,7 +161,6 @@
 </head>
 <body>
 
-    <!-- STEP 1: หน้าแรกแสดง Screen, PIN, Mail -->
     <div id="step1" class="step1-container">
         <button id="btn-music-step1" class="music-control" onclick="toggleMusic()">🔊 ปิดเพลง</button>
         
@@ -178,7 +183,6 @@
         <button class="btn-action" id="btn-goto-step2" onclick="goToStep2()">รับรหัสยืนยัน</button>
     </div>
 
-    <!-- STEP 2: หน้าแสดงการ์ดรหัสยืนยัน -->
     <div id="step2" class="step2-wrapper">
         <div class="outer-card">
             <button id="btn-music-step2" class="music-control" onclick="toggleMusic()">🔊 ปิดเพลง</button>
@@ -346,4 +350,4 @@
         loadTheme();
     </script>
 </body>
-</html>
+</html> 

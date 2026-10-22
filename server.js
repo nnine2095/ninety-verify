@@ -3,20 +3,22 @@ const path = require('path');
 const crypto = require('crypto');
 const { ImapFlow } = require('imapflow');
 const { simpleParser } = require('mailparser');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// เพิ่ม limit เป็น 10mb เพื่อรองรับไฟล์รูปภาพ Base64 จากการอัปโหลด
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 const validTokens = new Map();
 
-// 1. API สร้าง Link พร้อมบันทึกข้อมูลธีมและโปรไฟล์ลูกค้า
+// 1. API สร้าง Link พร้อมบันทึกข้อมูล Custom Meta Preview
 app.post('/api/generate-link', (req, res) => {
     const tokenId = crypto.randomBytes(8).toString('hex');
     const themeConfig = {
+        metaTitle: req.body.metaTitle || 'Verification Center',
+        metaDesc: req.body.metaDesc || 'ระบบรับรหัสยืนยันตัวตนชั่วคราว',
         screenTv: req.body.screenTv || '-',
         pin: req.body.pin || '-',
         mail: req.body.mail || '-',
@@ -43,7 +45,7 @@ app.get('/api/theme/:token', (req, res) => {
     res.json(validTokens.get(token));
 });
 
-// 3. หน้าเปิดดูรหัส
+// 3. หน้าเปิดดูรหัส (ฉีด Open Graph Meta Tags ตามที่ตั้งไว้ใน Admin)
 app.get('/view/:token', (req, res) => {
     const { token } = req.params;
     if (!validTokens.has(token)) {
@@ -71,7 +73,15 @@ app.get('/view/:token', (req, res) => {
             </html>
         `);
     }
-    res.sendFile(path.join(__dirname, 'index.html'));
+
+    const config = validTokens.get(token);
+    let html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
+
+    // แทนที่ค่า Meta Tag สำหรับการพรีวิวลิงก์เวลาแชร์
+    html = html.replace(/{{META_TITLE}}/g, config.metaTitle);
+    html = html.replace(/{{META_DESC}}/g, config.metaDesc);
+
+    res.send(html);
 });
 
 // 4. API ทำลาย Token
@@ -124,7 +134,7 @@ app.get('/api/emails', async (req, res) => {
     }
 });
 
-// 6. หน้า Admin Dashboard (อัปเดตระบบเลือกไฟล์รูปภาพจากในเครื่อง)
+// 6. หน้า Admin Dashboard (เพิ่มส่วนตั้งค่าพรีวิวลิงก์แชท)
 app.get('/', (req, res) => {
     res.send(`
         <!DOCTYPE html>
@@ -158,7 +168,17 @@ app.get('/', (req, res) => {
             <div class="card">
                 <h2>🎨 ปรับแต่งข้อมูล & สร้าง Link</h2>
                 
-                <div class="section-title">1. ข้อมูลลูกค้าสำหรับหน้าแรก</div>
+                <div class="section-title">1. ข้อความพรีวิวเวลาแชร์ลิงก์ (Preview Text)</div>
+                <div class="form-group">
+                    <label>ชื่อหัวข้อลิงก์ (Title)</label>
+                    <input type="text" id="metaTitle" value="Verification Center" placeholder="เช่น Verification Center">
+                </div>
+                <div class="form-group">
+                    <label>ข้อความอธิบายใต้ลิงก์ (Description)</label>
+                    <input type="text" id="metaDesc" value="ระบบรับรหัสยืนยันตัวตนชั่วคราว" placeholder="เช่น คลิกเพื่อรับรหัสยืนยัน">
+                </div>
+
+                <div class="section-title">2. ข้อมูลลูกค้าสำหรับหน้าแรก</div>
                 <div class="row-group">
                     <div class="form-group">
                         <label>Screen</label>
@@ -174,7 +194,7 @@ app.get('/', (req, res) => {
                     <input type="text" id="mail" placeholder="user@gmail.com">
                 </div>
 
-                <div class="section-title">2. ตกแต่งพื้นหลัง & รูปภาพ (เลือกจากในเครื่อง)</div>
+                <div class="section-title">3. ตกแต่งพื้นหลัง & รูปภาพ (เลือกจากในเครื่อง)</div>
                 <div class="form-group">
                     <label>รูปแบบพื้นหลัง</label>
                     <select id="bgType" onchange="toggleBgInputs()">
@@ -189,15 +209,13 @@ app.get('/', (req, res) => {
                 <div class="form-group" id="group-bgImage" style="display: none;">
                     <label>เลือกรูปภาพพื้นหลัง</label>
                     <input type="file" id="bgImageFile" accept="image/*">
-                    <div class="file-hint">เลือกไฟล์รูปภาพจากในคอมหรือมือถือของคุณ</div>
                 </div>
                 <div class="form-group">
                     <label>เลือกรูปโลโก้ / รูปหัวข้อ (ถ้ามี)</label>
                     <input type="file" id="logoFile" accept="image/*">
-                    <div class="file-hint">เลือกไฟล์โลโก้จากในเครื่องของคุณ</div>
                 </div>
 
-                <div class="section-title">3. ธีมสี & เพลงประกอบ</div>
+                <div class="section-title">4. ธีมสี & เพลงประกอบ</div>
                 <div class="row-group">
                     <div class="form-group">
                         <label>สีปุ่ม / ไฮไลท์</label>
@@ -231,7 +249,6 @@ app.get('/', (req, res) => {
                     }
                 }
 
-                // ฟังก์ชันอ่านไฟล์รูปภาพจากเครื่องแปลงเป็น Base64
                 function fileToBase64(file) {
                     return new Promise((resolve, reject) => {
                         if (!file) resolve('');
@@ -250,6 +267,8 @@ app.get('/', (req, res) => {
                     const logoData = await fileToBase64(logoFile);
 
                     const themeConfig = {
+                        metaTitle: document.getElementById('metaTitle').value,
+                        metaDesc: document.getElementById('metaDesc').value,
                         screenTv: document.getElementById('screenTv').value,
                         pin: document.getElementById('pin').value,
                         mail: document.getElementById('mail').value,
