@@ -23,33 +23,71 @@ app.get('/api/generate-link', (req, res) => {
 });
 
 // ตรวจสอบ Token ก่อนแสดงหน้าเว็บ
-app.get('/view/:token', (req, res) => {
-    const { token } = req.params;
-    if (!validTokens.has(token)) {
-        return res.send(`
-            <!DOCTYPE html>
-            <html lang="th">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>ลิงก์หมดอายุ</title>
-                <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
-                <style>
-                    body { font-family: 'Prompt', sans-serif; background-color: #141414; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; text-align: center; }
-                    .card { background: #222; padding: 40px 20px; border-radius: 16px; border: 1px solid #333; max-width: 400px; width: 90%; }
-                    h1 { color: #E50914; font-size: 24px; margin-bottom: 10px; }
-                    p { color: #aaa; font-size: 15px; }
-                </style>
-            </head>
-            <body>
-                <div class="card">
-                    <h1>❌ ลิงก์นี้หมดอายุแล้ว</h1>
-                    <p>ลิงก์นี้ถูกใช้งานไปแล้ว หรือไม่ถูกต้อง<br>กรุณาขอลิงก์ใหม่จากผู้ดูแลระบบ</p>
-                </div>
-            </body>
-            </html>
-        `);
-    }
+// หน้าแรกสำหรับสร้างลิงก์ (Admin) พร้อมปุ่มคัดลอก
+app.get('/', (req, res) => {
+    res.send(`
+        <!DOCTYPE html>
+        <html lang="th">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Netflix Link Generator</title>
+            <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">
+            <style>
+                * { box-sizing: border-box; margin: 0; padding: 0; }
+                body { font-family: 'Prompt', sans-serif; background: #141414; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+                .card { background: #222; padding: 35px 25px; border-radius: 16px; border: 1px solid #333; text-align: center; max-width: 450px; width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+                h2 { color: #E50914; margin-bottom: 20px; font-size: 24px; font-weight: 700; }
+                .btn { background: #E50914; color: #fff; border: none; padding: 12px 20px; font-size: 16px; border-radius: 8px; cursor: pointer; font-family: 'Prompt'; font-weight: 600; width: 100%; transition: all 0.2s ease; }
+                .btn:hover { background: #f40612; }
+                .btn-copy { background: #333; margin-top: 10px; display: none; }
+                .btn-copy:hover { background: #444; }
+                .btn-copy.success { background: #2e7d32; }
+                input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #111; color: #fff; text-align: center; font-size: 14px; margin-top: 15px; display: none; }
+            </style>
+        </head>
+        <body>
+            <div class="card">
+                <h2>สร้าง One-Time Link</h2>
+                <button class="btn" onclick="generateLink()">กดสร้างลิงก์ใหม่</button>
+                
+                <input type="text" id="link-output" readonly onclick="this.select()">
+                <button id="btn-copy-link" class="btn btn-copy" onclick="copyGeneratedLink()">คัดลอกลิงก์</button>
+            </div>
+
+            <script>
+                async function generateLink() {
+                    const res = await fetch('/api/generate-link');
+                    const data = await res.json();
+                    
+                    const input = document.getElementById('link-output');
+                    const copyBtn = document.getElementById('btn-copy-link');
+                    
+                    input.value = data.url;
+                    input.style.display = 'block';
+                    
+                    copyBtn.style.display = 'block';
+                    copyBtn.innerText = 'คัดลอกลิงก์';
+                    copyBtn.classList.remove('success');
+                }
+
+                function copyGeneratedLink() {
+                    const linkInput = document.getElementById('link-output');
+                    navigator.clipboard.writeText(linkInput.value).then(() => {
+                        const copyBtn = document.getElementById('btn-copy-link');
+                        copyBtn.innerText = 'คัดลอกลิงก์เรียบร้อย! ✓';
+                        copyBtn.classList.add('success');
+                        setTimeout(() => {
+                            copyBtn.innerText = 'คัดลอกลิงก์';
+                            copyBtn.classList.remove('success');
+                        }, 2000);
+                    });
+                }
+            </script>
+        </body>
+        </html>
+    `);
+});
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
