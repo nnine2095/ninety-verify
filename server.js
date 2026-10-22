@@ -9,12 +9,9 @@ const PORT = process.env.PORT || 10000;
 
 app.use(express.json());
 
-// ----------------------------------------------------
-// 1. หน่วยความจำเก็บ One-Time Token
-// ----------------------------------------------------
 const validTokens = new Set();
 
-// 📍 API สำหรับกดสร้างลิงก์ชั่วคราว
+// 1. API สร้าง Token
 app.get('/api/generate-link', (req, res) => {
     const tokenId = crypto.randomBytes(8).toString('hex');
     validTokens.add(tokenId);
@@ -22,7 +19,7 @@ app.get('/api/generate-link', (req, res) => {
     res.json({ url: oneTimeUrl, token: tokenId });
 });
 
-// 📍 หน้าสำหรับเปิดดูรหัส Netflix ผ่าน Token (ส่ง index.html)
+// 2. หน้าแสดงรหัสผ่าน Token (ส่ง index.html)
 app.get('/view/:token', (req, res) => {
     const { token } = req.params;
     if (!validTokens.has(token)) {
@@ -50,31 +47,28 @@ app.get('/view/:token', (req, res) => {
             </html>
         `);
     }
-    // ส่งไฟล์หน้าแสดงรหัส Netflix ให้คนเปิดลิงก์
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// 📍 API สำหรับลบ Token เมื่อกดคัดลอกรหัส
+// 3. API ทำลาย Token
 app.post('/api/invalidate-token', (req, res) => {
     const { token } = req.body;
     if (validTokens.has(token)) {
         validTokens.delete(token);
-        return res.json({ success: true, message: 'ทำลาย Token เรียบร้อย' });
+        return res.json({ success: true });
     }
-    res.status(400).json({ error: 'Token ไม่ถูกต้องหรือหมดอายุแล้ว' });
+    res.status(400).json({ error: 'Token invalid' });
 });
 
-// ----------------------------------------------------
-// 2. ระบบดึงอีเมลจาก Gmail ผ่าน IMAP
-// ----------------------------------------------------
+// 4. API ดึงอีเมลผ่าน IMAP
 app.get('/api/emails', async (req, res) => {
     const client = new ImapFlow({
         host: 'imap.gmail.com',
         port: 993,
         secure: true,
         auth: {
-            user: process.env.EMAIL_USER || 'อีเมลของคุณ@gmail.com',
-            pass: process.env.EMAIL_PASS || 'รหัสผ่านแอปของคุณ'
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS
         },
         logger: false
     });
@@ -106,9 +100,7 @@ app.get('/api/emails', async (req, res) => {
     }
 });
 
-// ----------------------------------------------------
-// 3. หน้าแรกหลัก (Admin - กดสร้างลิงก์)
-// ----------------------------------------------------
+// 5. หน้า Admin สำหรับกดสร้างลิงก์ (หน้าแรก)
 app.get('/', (req, res) => {
     res.send(`
         <!DOCTYPE html>
@@ -135,27 +127,21 @@ app.get('/', (req, res) => {
             <div class="card">
                 <h2>สร้าง One-Time Link</h2>
                 <button class="btn" onclick="generateLink()">กดสร้างลิงก์ใหม่</button>
-                
                 <input type="text" id="link-output" readonly onclick="this.select()">
                 <button id="btn-copy-link" class="btn btn-copy" onclick="copyGeneratedLink()">คัดลอกลิงก์</button>
             </div>
-
             <script>
                 async function generateLink() {
                     const res = await fetch('/api/generate-link');
                     const data = await res.json();
-                    
                     const input = document.getElementById('link-output');
                     const copyBtn = document.getElementById('btn-copy-link');
-                    
                     input.value = data.url;
                     input.style.display = 'block';
-                    
                     copyBtn.style.display = 'block';
                     copyBtn.innerText = 'คัดลอกลิงก์';
                     copyBtn.classList.remove('success');
                 }
-
                 function copyGeneratedLink() {
                     const linkInput = document.getElementById('link-output');
                     navigator.clipboard.writeText(linkInput.value).then(() => {

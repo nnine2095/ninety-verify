@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Netflix Verification Code</title>
+    <title>Netflix Code Verification</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -46,7 +46,6 @@
             width: 100%; 
         }
         .copy-btn:hover { background-color: #ff0f1a; transform: translateY(-2px); }
-        .copy-btn.copied { background-color: #2e7d32; }
         .email-date { font-size: 12px; color: #777777; margin-top: 18px; }
         .no-code { font-size: 15px; color: #888888; padding: 20px 0; }
     </style>
@@ -58,7 +57,6 @@
     </div>
 
     <script>
-        // ดึง Token จาก URL เช่น /view/abc123xyz
         const currentToken = window.location.pathname.split('/').pop();
 
         function extractNetflixCode(text) {
@@ -74,7 +72,6 @@
             try {
                 await navigator.clipboard.writeText(codeText);
 
-                // ทำลาย Token ทันทีเมื่อคัดลอกสำเร็จ
                 await fetch('/api/invalidate-token', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -84,11 +81,10 @@
                 const btn = document.getElementById('btn-copy');
                 if (btn) {
                     btn.innerText = 'คัดลอกแล้ว (ลิงก์หมดอายุแล้ว) ✓';
-                    btn.classList.add('copied');
+                    btn.style.backgroundColor = '#2e7d32';
                     btn.disabled = true;
                 }
 
-                // รีเฟรชไปหน้าหมดอายุใน 2 วินาที
                 setTimeout(() => {
                     window.location.reload();
                 }, 2000);
@@ -135,7 +131,7 @@
                 listDiv.appendChild(emailDiv);
 
             } catch (error) {
-                document.getElementById('email-list').innerHTML = '<p style="color:#E50914;">เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ หรือไม่มีอีเมลเข้ามา</p>';
+                document.getElementById('email-list').innerHTML = '<p style="color:#E50914;">เชื่อมต่อเซิร์ฟเวอร์ไม่ได้</p>';
             }
         }
 
