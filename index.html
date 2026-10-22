@@ -3,118 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ninety verification netflix-code</title>
-
-    <!-- 📍 ข้อความที่จะขึ้นแสดงเวลาส่งลิงก์ใน LINE / Facebook / แอปแชท -->
-    <meta property="og:title" content="Netflix Verification Code Reader">
-    <meta property="og:description" content="ninety verification ">
+    <title>Netflix Code Verification</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body { 
-            font-family: Arial, sans-serif; 
-            background-color: #141414; 
-            color: white;
+            font-family: 'Prompt', sans-serif; 
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a0002 100%);
+            color: #ffffff; 
             padding: 20px; 
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 90vh;
-            margin: 0;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
         }
         .container { 
-            max-width: 400px; 
-            width: 100%;
-            background: #181818; 
-            padding: 30px; 
-            border-radius: 12px; 
-            box-shadow: 0 8px 16px rgba(0,0,0,0.5); 
-            text-align: center;
+            max-width: 420px; 
+            width: 100%; 
+            background: rgba(24, 24, 24, 0.85); 
+            backdrop-filter: blur(10px); 
+            padding: 35px 25px; 
+            border-radius: 20px; 
+            border: 1px solid rgba(229, 9, 20, 0.2); 
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7); 
+            text-align: center; 
         }
-        .header { 
-            color: #E50914; 
-            margin-bottom: 25px;
-            font-size: 24px;
-        }
-        .email-card { 
-            border: 1px solid #333; 
-            border-radius: 8px;
-            padding: 20px; 
-            margin-bottom: 15px;
-            background-color: #222;
-        }
-        .netflix-code { 
-            font-size: 52px; 
-            font-weight: bold; 
-            color: #E50914; 
-            letter-spacing: 8px; 
-            margin: 15px 0; 
-        }
-        .copy-btn {
-            background-color: #E50914;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            font-size: 16px;
-            font-weight: bold;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            margin-top: 5px;
-        }
-        .copy-btn:hover {
-            background-color: #f40612;
-        }
-        .copy-btn.copied {
-            background-color: #2e7d32; /* เปลี่ยนเป็นสีเขียวเมื่อคัดลอกสำเร็จ */
-        }
-        .email-date { 
-            font-size: 13px; 
-            color: #aaa; 
-            margin-top: 15px;
-        }
-        .no-code { 
+        .logo { font-size: 28px; font-weight: 700; color: #E50914; letter-spacing: 1px; margin-bottom: 20px; text-transform: uppercase; }
+        .email-card { background: #222222; border: 1px solid #333333; border-radius: 14px; padding: 25px 20px; margin-top: 10px; }
+        .card-label { font-size: 14px; color: #aaaaaa; margin-bottom: 8px; }
+        .netflix-code { font-size: 50px; font-weight: 700; color: #ffffff; letter-spacing: 8px; margin: 15px 0 20px 0; text-shadow: 0 0 15px rgba(229, 9, 20, 0.6); }
+        .copy-btn { 
+            background-color: #E50914; 
+            color: #ffffff; 
+            border: none; 
+            padding: 12px 28px; 
             font-size: 16px; 
-            color: #888; 
+            font-weight: 600; 
+            font-family: 'Prompt', sans-serif; 
+            border-radius: 30px; 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+            width: 100%; 
         }
+        .copy-btn:hover { background-color: #ff0f1a; transform: translateY(-2px); }
+        .email-date { font-size: 12px; color: #777777; margin-top: 18px; }
+        .no-code { font-size: 15px; color: #888888; padding: 20px 0; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2 class="header">รหัสยืนยัน Netflix</h2>
-        <div id="email-list">กำลังรอรหัส...</div>
+        <div class="logo">NETFLIX CODE</div>
+        <div id="email-list">กำลังรอดึงรหัส...</div>
     </div>
 
     <script>
+        // ดึง Token จาก URL ปัจจุบัน
+        const currentToken = window.location.pathname.split('/').pop();
+
         function extractNetflixCode(text) {
             if (!text) return null;
-
             const keywordMatch = text.match(/(?:รหัส|code|verification|sign in|ยืนยัน)[\s\S]{0,30}?\b(\d{4,6})\b/i);
-            if (keywordMatch) {
-                return keywordMatch[1];
-            }
-
+            if (keywordMatch) return keywordMatch[1];
             const standaloneMatch = text.match(/\b(\d{4}|\d{6})\b/);
-            if (standaloneMatch) {
-                return standaloneMatch[1];
-            }
-
+            if (standaloneMatch) return standaloneMatch[1];
             return null;
         }
 
-        // 📍 ฟังก์ชันสำหรับคัดลอกรหัสเข้า Clipboard
-        function copyCodeToClipboard(codeText) {
-            navigator.clipboard.writeText(codeText).then(() => {
+        async function copyCodeToClipboard(codeText) {
+            try {
+                // 1. คัดลอกรหัสเข้า Clipboard
+                await navigator.clipboard.writeText(codeText);
+
+                // 2. ทำลาย Token บนเซิร์ฟเวอร์
+                await fetch('/api/invalidate-token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: currentToken })
+                });
+
+                // 3. ปรับสถานะปุ่ม
                 const btn = document.getElementById('btn-copy');
                 if (btn) {
-                    btn.innerText = 'คัดลอกแล้ว! ✓';
-                    btn.classList.add('copied');
-                    setTimeout(() => {
-                        btn.innerText = 'คัดลอกรหัส';
-                        btn.classList.remove('copied');
-                    }, 2000);
+                    btn.innerText = 'คัดลอกแล้ว (ลิงก์หมดอายุแล้ว) ✓';
+                    btn.style.backgroundColor = '#2e7d32';
+                    btn.disabled = true;
                 }
-            }).catch(err => {
+
+                // 4. รีเฟรชหน้าเว็บเพื่อแสดงหน้าลิงก์หมดอายุ
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+
+            } catch (err) {
                 console.error('คัดลอกไม่สำเร็จ:', err);
-            });
+            }
         }
 
         async function loadEmails() {
@@ -139,7 +121,7 @@
 
                 if (foundCode) {
                     emailDiv.innerHTML = `
-                        <div style="font-size: 14px; color: #ccc;">รหัสยืนยันล่าสุด</div>
+                        <div class="card-label">รหัสยืนยันล่าสุด</div>
                         <div class="netflix-code">${foundCode}</div>
                         <button id="btn-copy" class="copy-btn" onclick="copyCodeToClipboard('${foundCode}')">คัดลอกรหัส</button>
                         <div class="email-date">รับเมื่อ: ${new Date(latestEmail.date).toLocaleString('th-TH')}</div>
@@ -154,7 +136,7 @@
                 listDiv.appendChild(emailDiv);
 
             } catch (error) {
-                document.getElementById('email-list').innerHTML = '<p style="color:#E50914;">เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ กรุณาเปิด node server.js</p>';
+                document.getElementById('email-list').innerHTML = '<p style="color:#E50914;">เชื่อมต่อเซิร์ฟเวอร์ไม่ได้</p>';
             }
         }
 
