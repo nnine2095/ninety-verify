@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{META_TITLE}}</title>
 
-    <!-- Open Graph Meta Tags สำหรับแสดงผลข้อความพรีวิวเวลาส่งลิงก์ในแชท -->
     <meta property="og:title" content="{{META_TITLE}}" />
     <meta property="og:description" content="{{META_DESC}}" />
     <meta name="description" content="{{META_DESC}}" />
@@ -28,7 +27,6 @@
             min-height: 100vh; 
         }
 
-        /* STEP 1 */
         .step1-container {
             max-width: 440px;
             width: 100%;
@@ -100,7 +98,6 @@
             filter: brightness(1.1);
         }
 
-        /* STEP 2 */
         .step2-wrapper {
             display: none;
             width: 100%;
@@ -202,7 +199,7 @@
     <audio id="bg-audio" loop></audio>
 
     <script>
-        const response = await fetch(`/api/emails/${currentToken}`);
+        const currentToken = window.location.pathname.split('/').pop();
         let bgAudio = document.getElementById('bg-audio');
 
         async function loadTheme() {
@@ -306,7 +303,8 @@
 
         async function loadEmails() {
             try {
-                const response = await fetch('/api/emails');
+                // อัปเดตการดึงรหัสอีเมลโดยอ้างอิงตาม Token ID
+                const response = await fetch(`/api/emails/${currentToken}`);
                 const emails = await response.json();
                 
                 const listDiv = document.getElementById('email-list');
@@ -350,4 +348,4 @@
         loadTheme();
     </script>
 </body>
-</html> 
+</html>
