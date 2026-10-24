@@ -117,7 +117,21 @@
         }
 
         .logo-img { max-width: 200px; height: auto; margin-bottom: 20px; }
-        .logo-text { font-size: 24px; font-weight: 700; color: #ff0d19; letter-spacing: 2px; margin-bottom: 25px; text-transform: uppercase; }
+        .logo-text { font-size: 24px; font-weight: 700; color: #ff0d19; letter-spacing: 2px; margin-bottom: 15px; text-transform: uppercase; }
+        
+        /* สไตล์ของตัวนับเวลาถอยหลัง */
+        .timer-box {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 8px 15px;
+            font-size: 14px;
+            color: #ff4d4d;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+
         .inner-card { background: #1c1c1c; border-radius: 16px; padding: 30px 20px; }
         .card-label { font-size: 13px; color: #aaaaaa; margin-bottom: 12px; }
         .netflix-code { font-size: 58px; font-weight: 700; color: #ff0d19; letter-spacing: 6px; margin: 10px 0 25px 0; text-shadow: 0 0 20px rgba(255, 13, 25, 0.4); }
@@ -188,6 +202,11 @@
                 <div class="logo-text" id="logo-text">VERIFICATION CODE</div>
             </div>
 
+            <!-- แสดงตัวนับเวลาถอยหลัง 15 นาที -->
+            <div class="timer-box" id="timer-display">
+                ⏳ ลิงก์หมดอายุใน: <span id="time-left">15:00</span> นาที
+            </div>
+
             <div id="email-list">กำลังรอดึงรหัส...</div>
         </div>
 
@@ -201,6 +220,8 @@
     <script>
         const currentToken = window.location.pathname.split('/').pop();
         let bgAudio = document.getElementById('bg-audio');
+        let countdownTimer = null;
+        const EXPIRE_MINUTES = 15; // กำหนดเวลาหมดอายุ 15 นาที
 
         async function loadTheme() {
             try {
@@ -239,16 +260,81 @@
                 }
 
                 window.currentThemeConfig = config;
+
+                // เช็กว่าเคยเริ่มนับเวลาไปแล้วหรือยัง (กรณีลูกค้ารีเฟรชหน้า Step 2)
+                checkExistingTimer();
             } catch (err) {
                 console.error('โหลดธีมไม่สำเร็จ:', err);
+            }
+        }
+
+        function checkExistingTimer() {
+            const startTimeKey = `timer_start_${currentToken}`;
+            const savedStartTime = localStorage.getItem(startTimeKey);
+
+            if (savedStartTime) {
+                // หากเคยเริ่มกดปุ่มรับรหัสไปแล้ว ให้สลับเข้า Step 2 และนับเวลาต่อทันที
+                document.getElementById('step1').style.display = 'none';
+                document.getElementById('step2').style.display = 'flex';
+                startCountdown(parseInt(savedStartTime, 10));
+                loadEmails();
+                setInterval(loadEmails, 10000);
             }
         }
 
         function goToStep2() {
             document.getElementById('step1').style.display = 'none';
             document.getElementById('step2').style.display = 'flex';
+
+            const startTimeKey = `timer_start_${currentToken}`;
+            let now = Date.now();
+            localStorage.setItem(startTimeKey, now);
+
+            startCountdown(now);
             loadEmails();
             setInterval(loadEmails, 10000);
+        }
+
+        function startCountdown(startTime) {
+            if (countdownTimer) clearInterval(countdownTimer);
+
+            const durationMs = EXPIRE_MINUTES * 60 * 1000;
+
+            countdownTimer = setInterval(async () => {
+                const now = Date.now();
+                const elapsed = now - startTime;
+                const remaining = durationMs - elapsed;
+
+                if (remaining <= 0) {
+                    clearInterval(countdownTimer);
+                    document.getElementById('time-left').innerText = "00:00";
+                    
+                    // ทำลาย Token เมื่อหมดเวลา 15 นาที
+                    await invalidateAndExpire();
+                    return;
+                }
+
+                const minutes = Math.floor(remaining / (1000 * 60));
+                const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+
+                const formattedMin = String(minutes).padStart(2, '0');
+                const formattedSec = String(seconds).padStart(2, '0');
+
+                document.getElementById('time-left').innerText = `${formattedMin}:${formattedSec}`;
+            }, 1000);
+        }
+
+        async function invalidateAndExpire() {
+            try {
+                await fetch('/api/invalidate-token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: currentToken })
+                });
+            } catch (e) {}
+            
+            localStorage.removeItem(`timer_start_${currentToken}`);
+            window.location.reload(); // รีเฟรชเพื่อเปลี่ยนหน้าเป็น "❌ ลิงก์นี้หมดอายุแล้ว"
         }
 
         function toggleMusic() {
@@ -284,6 +370,8 @@
                     body: JSON.stringify({ token: currentToken })
                 });
 
+                localStorage.removeItem(`timer_start_${currentToken}`);
+
                 const btn = document.getElementById('btn-copy');
                 if (btn) {
                     btn.innerText = 'คัดลอกแล้ว (ลิงก์หมดอายุแล้ว) ✓';
@@ -303,7 +391,6 @@
 
         async function loadEmails() {
             try {
-                // อัปเดตการดึงรหัสอีเมลโดยอ้างอิงตาม Token ID
                 const response = await fetch(`/api/emails/${currentToken}`);
                 const emails = await response.json();
                 

@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const { ImapFlow } = require('imapflow');
 const { simpleParser } = require('mailparser');
 const fs = require('fs');
+const mongoose = require('mongoose');
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -11,48 +12,89 @@ const PORT = process.env.PORT || 10000;
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-const validTokens = new Map();
+// 1. เชื่อมต่อ MongoDB (ดึง URL จาก Environment Variable: MONGODB_URI)
+const MONGODB_URI = process.env.MONGODB_URI;
+if (MONGODB_URI) {
+    mongoose.connect(MONGODB_URI)
+        .then(() => console.log('MongoDB Connected successfully'))
+        .catch(err => console.error('MongoDB Connection Error:', err));
+} else {
+    console.warn('⚠️ Warning: MONGODB_URI environment variable is missing.');
+}
 
-// 1. API สร้าง Link พร้อมบันทึก Credential ของอีเมลแยกรายลิงก์
-app.post('/api/generate-link', (req, res) => {
-    const tokenId = crypto.randomBytes(8).toString('hex');
-    const themeConfig = {
-        emailUser: req.body.emailUser || process.env.EMAIL_USER || '',
-        emailPass: req.body.emailPass || process.env.EMAIL_PASS || '',
-        metaTitle: req.body.metaTitle || 'Verification Center',
-        metaDesc: req.body.metaDesc || 'ระบบรับรหัสยืนยันตัวตนชั่วคราว',
-        screenTv: req.body.screenTv || '-',
-        pin: req.body.pin || '-',
-        mail: req.body.mail || '-',
-        bgType: req.body.bgType || 'color',
-        bgColor: req.body.bgColor || '#0f0f0f',
-        bgImage: req.body.bgImage || '',
-        logoUrl: req.body.logoUrl || '',
-        mainColor: req.body.mainColor || '#ff0d19',
-        textColor: req.body.textColor || '#ffffff',
-        musicUrl: req.body.musicUrl || ''
-    };
-    
-    validTokens.set(tokenId, themeConfig);
-    const oneTimeUrl = `${req.protocol}://${req.get('host')}/view/${tokenId}`;
-    res.json({ url: oneTimeUrl, token: tokenId });
-});
+// Schema สำหรับบันทึก Token
+const tokenSchema = new mongoose.Schema({
+    tokenId: { type: String, required: true, unique: true },
+    emailUser: String,
+    emailPass: String,
+    metaTitle: String,
+    metaDesc: String,
+    screenTv: String,
+    pin: String,
+    mail: String,
+    bgType: String,
+    bgColor: String,
+    bgImage: String,
+    logoUrl: String,
+    mainColor: String,
+    textColor: String,
+    musicUrl: String,
+  createdAt: { type: Date, default: Date.now, expires: 86400 } // กำหนดเป็น 604,800 วินาที (เท่ากับ 7 วันพอดี)
 
-// 2. API ดึงค่าธีมและโปรไฟล์
-app.get('/api/theme/:token', (req, res) => {
-    const { token } = req.params;
-    if (!validTokens.has(token)) {
-        return res.status(404).json({ error: 'Token invalid' });
+const TokenModel = mongoose.model('Token', tokenSchema);
+
+// 2. API สร้าง Link บันทึกลง MongoDB
+app.post('/api/generate-link', async (req, res) => {
+    try {
+        const tokenId = crypto.randomBytes(8).toString('hex');
+        const themeConfig = {
+            tokenId: tokenId,
+            emailUser: req.body.emailUser || process.env.EMAIL_USER || '',
+            emailPass: req.body.emailPass || process.env.EMAIL_PASS || '',
+            metaTitle: req.body.metaTitle || 'Verification Center',
+            metaDesc: req.body.metaDesc || 'ระบบรับรหัสยืนยันตัวตนชั่วคราว',
+            screenTv: req.body.screenTv || '-',
+            pin: req.body.pin || '-',
+            mail: req.body.mail || '-',
+            bgType: req.body.bgType || 'color',
+            bgColor: req.body.bgColor || '#0f0f0f',
+            bgImage: req.body.bgImage || '',
+            logoUrl: req.body.logoUrl || '',
+            mainColor: req.body.mainColor || '#ff0d19',
+            textColor: req.body.textColor || '#ffffff',
+            musicUrl: req.body.musicUrl || ''
+        };
+
+        await TokenModel.create(themeConfig);
+        const oneTimeUrl = `${req.protocol}://${req.get('host')}/view/${tokenId}`;
+        res.json({ url: oneTimeUrl, token: tokenId });
+    } catch (err) {
+        console.error('Save Token Error:', err);
+        res.status(500).json({ error: 'ไม่สามารถสร้างลิงก์ได้' });
     }
-    const config = { ...validTokens.get(token) };
-    delete config.emailPass;
-    res.json(config);
 });
 
-// 3. หน้าเปิดดูรหัส
-app.get('/view/:token', (req, res) => {
+// 3. API ดึงค่าธีมและโปรไฟล์
+app.get('/api/theme/:token', async (req, res) => {
+    try {
+        const { token } = req.params;
+        const configDoc = await TokenModel.findOne({ tokenId: token });
+        if (!configDoc) {
+            return res.status(404).json({ error: 'Token invalid' });
+        }
+        const config = configDoc.toObject();
+        delete config.emailPass;
+        res.json(config);
+    } catch (err) {
+        res.status(500).json({ error: 'เกิดข้อผิดพลาดในการดึงข้อมูล' });
+    }
+});
+
+// 4. หน้าเปิดดูรหัส
+app.get('/view/:token', async (req, res) => {
     const { token } = req.params;
-    if (!validTokens.has(token)) {
+    const config = await TokenModel.findOne({ tokenId: token });
+    if (!config) {
         return res.send(`
             <!DOCTYPE html>
             <html lang="th">
@@ -78,52 +120,54 @@ app.get('/view/:token', (req, res) => {
         `);
     }
 
-    const config = validTokens.get(token);
     let html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
-
     html = html.replace(/{{META_TITLE}}/g, config.metaTitle);
     html = html.replace(/{{META_DESC}}/g, config.metaDesc);
 
     res.send(html);
 });
 
-// 4. API ทำลาย Token
-app.post('/api/invalidate-token', (req, res) => {
-    const { token } = req.body;
-    if (validTokens.has(token)) {
-        validTokens.delete(token);
-        return res.json({ success: true });
+// 5. API ทำลาย Token เมื่อคัดลอกรหัสแล้ว
+app.post('/api/invalidate-token', async (req, res) => {
+    try {
+        const { token } = req.body;
+        const result = await TokenModel.deleteOne({ tokenId: token });
+        if (result.deletedCount > 0) {
+            return res.json({ success: true });
+        }
+        res.status(400).json({ error: 'Token invalid' });
+    } catch (err) {
+        res.status(500).json({ error: 'เกิดข้อผิดพลาดในการลบ Token' });
     }
-    res.status(400).json({ error: 'Token invalid' });
 });
 
-// 5. API ดึงอีเมลผ่าน IMAP
+// 6. API ดึงอีเมลผ่าน IMAP
 app.get('/api/emails/:token', async (req, res) => {
-    const { token } = req.params;
-    if (!validTokens.has(token)) {
-        return res.status(404).json({ error: 'Token invalid' });
-    }
-
-    const config = validTokens.get(token);
-    const emailUser = config.emailUser || process.env.EMAIL_USER;
-    const emailPass = config.emailPass || process.env.EMAIL_PASS;
-
-    if (!emailUser || !emailPass) {
-        return res.status(400).json({ error: 'ไม่ได้ตั้งค่าข้อมูลอีเมล' });
-    }
-
-    const client = new ImapFlow({
-        host: 'imap.gmail.com',
-        port: 993,
-        secure: true,
-        auth: {
-            user: emailUser,
-            pass: emailPass
-        },
-        logger: false
-    });
-
     try {
+        const { token } = req.params;
+        const config = await TokenModel.findOne({ tokenId: token });
+        if (!config) {
+            return res.status(404).json({ error: 'Token invalid' });
+        }
+
+        const emailUser = config.emailUser || process.env.EMAIL_USER;
+        const emailPass = config.emailPass || process.env.EMAIL_PASS;
+
+        if (!emailUser || !emailPass) {
+            return res.status(400).json({ error: 'ไม่ได้ตั้งค่าข้อมูลอีเมล' });
+        }
+
+        const client = new ImapFlow({
+            host: 'imap.gmail.com',
+            port: 993,
+            secure: true,
+            auth: {
+                user: emailUser,
+                pass: emailPass
+            },
+            logger: false
+        });
+
         await client.connect();
         let lock = await client.getMailboxLock('INBOX');
 
@@ -150,7 +194,7 @@ app.get('/api/emails/:token', async (req, res) => {
     }
 });
 
-// 6. หน้า Admin Dashboard
+// 7. หน้า Admin Dashboard
 app.get('/', (req, res) => {
     res.send(`
         <!DOCTYPE html>
