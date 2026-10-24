@@ -39,7 +39,8 @@ const tokenSchema = new mongoose.Schema({
     mainColor: String,
     textColor: String,
     musicUrl: String,
-  createdAt: { type: Date, default: Date.now, expires: 86400 } // กำหนดเป็น 604,800 วินาที (เท่ากับ 7 วันพอดี)
+    createdAt: { type: Date, default: Date.now, expires: 86400 } // ✅ กำหนดเป็น 86,400 วินาที (เท่ากับ 1 วันพอดี)
+});
 
 const TokenModel = mongoose.model('Token', tokenSchema);
 
